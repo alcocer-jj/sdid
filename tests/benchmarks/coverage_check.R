@@ -2,7 +2,7 @@
 # estimators for the random.low.rank DGP.
 # R: 3.6.0
 set.seed(42)
-library(synthdid)
+library(sdid)
 
 estimators = list("sc_estimate", "did_estimate", "synthdid_estimate")
 CI.methods = c("jackknife", "bootstrap", "placebo")
@@ -10,7 +10,7 @@ res = 0
 for (estimator in estimators) {
   for (CI.method in CI.methods) {
     cov = replicate(1000, {
-      setup = synthdid:::random.low.rank()
+      setup = sdid:::random.low.rank()
       estimate = do.call(estimator, setup[-2])
       se = synthdid_se(estimate, method = CI.method)
       1 > estimate - 1.96*se && 1 < estimate + 1.96*se

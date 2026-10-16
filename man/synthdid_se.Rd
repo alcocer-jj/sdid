@@ -2,13 +2,16 @@
 % Please edit documentation in R/vcov.R
 \name{synthdid_se}
 \alias{synthdid_se}
-\title{Calculate the standard error of a synthetic diff in diff estimate. Deprecated. Use vcov.synthdid_estimate.}
+\title{Calculate the standard error of a synthetic diff in diff estimate.
+Deprecated. Use vcov.sdid_estimate.}
 \usage{
 synthdid_se(...)
 }
 \arguments{
-\item{...}{Any valid arguments for vcov.synthdid_estimate}
+\item{...}{Any valid arguments for vcov.sdid_estimate}
 }
 \description{
-Calculate the standard error of a synthetic diff in diff estimate. Deprecated. Use vcov.synthdid_estimate.
+Calculate the standard error of a synthetic diff in diff estimate.
+Deprecated. Use vcov.sdid_estimate.
 }
+\keyword{internal}

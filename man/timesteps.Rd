@@ -14,5 +14,7 @@ its column names interpreted as Dates if possible
 }
 \description{
 timesteps are stored as colnames(Y), but column names cannot be Date objects.
-Instead, we use strings. If they are strings convertible to dates, return that
+Instead, we use strings. If they are strings convertible to dates, return
+that
 }
+\keyword{internal}

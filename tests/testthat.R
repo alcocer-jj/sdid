@@ -1,4 +1,4 @@
 library(testthat)
-library(synthdid)
+library(sdid)
 
-test_check("synthdid")
+test_check("sdid")

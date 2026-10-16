@@ -5,11 +5,16 @@ test_that("a simple workflow doesn't error", {
   se.jackknife = sqrt(vcov(tau.hat, method='jackknife'))
   se.placebo   = sqrt(vcov(tau.hat, method='placebo', replications = 10))
 
-  print(tau.hat)
-  summary(tau.hat, fast = TRUE)
+  # An estimate prints on one line, without computing a standard error, and returns itself invisibly.
+  expect_output(printed <- print(tau.hat),
+                "^Synthetic difference-in-differences estimate -?[0-9.]+\\. Effective controls [0-9.]+ of 100 and effective periods before treatment [0-9.]+ of 120, with 10 treated units and 20 periods after treatment\\.$")
+  expect_identical(printed, tau.hat)
+  invisible(capture.output(shown <- withVisible(print(tau.hat))))
+  expect_false(shown$visible)
   plot(tau.hat)
-
-  expect_equal(1, 1)
+  # A synthetic control estimate has no time weights.
+  expect_output(print(sc_estimate(setup$Y, setup$N0, setup$T0)), "^Synthetic control estimate .* and no time weights,")
+  expect_output(print(did_estimate(setup$Y, setup$N0, setup$T0)), "^Difference-in-differences estimate .* periods before treatment 120\\.0 of 120,")
 })
 
 test_that("plotting doesn't error with (i) dates as colnames (ii) spaghetti units", {
@@ -18,8 +23,9 @@ test_that("plotting doesn't error with (i) dates as colnames (ii) spaghetti unit
   california_prop99$date = as.Date(sprintf('%04d/%02d/%02d', california_prop99$Year, 1, 1))
   setup = panel.matrices(california_prop99, time='date')
   estimate = synthdid_estimate(setup$Y, setup$N0, setup$T0)
-  top.controls = synthdid_controls(estimate)[1:10, , drop=FALSE]
-  plot(estimate, spaghetti.units=rownames(top.controls))
+  # The ten controls with the largest unit weights.
+  top.controls = rownames(setup$Y)[order(attr(estimate, 'weights')$omega, decreasing = TRUE)[1:10]]
+  plot(estimate, spaghetti.units = top.controls)
 
   expect_equal(1, 1)
 })
@@ -30,7 +36,8 @@ test_that("adjustment for covariates works: random noise less influential if pas
 
   tau.hat = synthdid_estimate(setup$Y,setup$N0,setup$T0)
   tau.hat.noise = synthdid_estimate(setup$Y+X,setup$N0,setup$T0)
-  tau.hat.cov = synthdid_estimate(setup$Y+X,setup$N0,setup$T0,X)
+  # The covariate solver reaches max.iter on this data, which synthdid_estimate reports with a warning.
+  tau.hat.cov = suppressWarnings(synthdid_estimate(setup$Y+X,setup$N0,setup$T0,X), classes = "sdid_max_iter_warning")
   se = synthdid_se(tau.hat, replications = 10)
 
   expect_lt(abs(tau.hat - tau.hat.cov), abs(tau.hat - tau.hat.noise))

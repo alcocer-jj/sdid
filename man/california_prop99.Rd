@@ -14,24 +14,24 @@ A data frame with 1209 rows and 4 variables:
 }
 }
 \source{
-Abadie, Alberto, Alexis Diamond, and Jens Hainmueller.
-"Synthetic control methods for comparative case studies: Estimating the effect of California’s tobacco control program."
-Journal of the American statistical Association 105, no. 490 (2010): 493-505.
+Abadie, Alberto, Alexis Diamond, and Jens Hainmueller. "Synthetic
+control methods for comparative case studies: Estimating the effect of
+California’s tobacco control program." Journal of the American statistical
+Association 105, no. 490 (2010): 493-505.
 }
 \usage{
 data(california_prop99)
 }
 \description{
-A dataset containing per-capita cigarette consumption (in packs).
-In year 1989 California imposed a Tobacco tax. The column \code{treated} is 1 from then on for California.
+A dataset containing per-capita cigarette consumption (in packs). In year
+1989 California imposed a Tobacco tax. The column \code{treated} is 1 from then on
+for California.
 }
 \examples{
 \donttest{
-# Load tobacco sales in long panel format.
-data("california_prop99")
-# Transform to N*T matrix format required for synthdid,
-# where N is the number of units and T the time periods.
-setup <- panel.matrices(california_prop99)
+data(california_prop99)
+sdid(california_prop99, "PacksPerCapita", "State", "Year", "treated",
+     vce = "placebo", seed = 1213, graph = FALSE)
 }
 
 }

@@ -1,27 +1,48 @@
-Package: synthdid
-Title: Synthetic Difference-in-Difference Estimation
-Version: 0.0.9
-Author: Dmitry Arkhangelsky [aut]
-        Susan Athey [aut]
-        David A. Hirshberg [aut, cre]
-        Guido W. Imbens [aut]
-        Stefan Wager [aut]
-Maintainer: David A. Hirshberg <david.a.hirshberg@gmail.com>
-Description: Estimate average treatment effects in panel data.
-    Currently provides methods only for the case that all treated units
-    adopt treatment at the same time.
+Package: sdid
+Title: Synthetic Difference-in-Differences Estimation and Inference for R
+Version: 0.1.0
+Authors@R: c(
+    person("Jose J.", "Alcocer", email = "alcocer@protonmail.com", role = c("aut", "cre", "cph")),
+    person("Harry G.", "Muttram", email = "hmutt001@ucr.edu", role = "aut"),
+    person("Dmitry", "Arkhangelsky", role = "ctb"),
+    person("Susan", "Athey", role = "ctb"),
+    person("David A.", "Hirshberg", role = "ctb"),
+    person("Guido W.", "Imbens", role = "ctb"),
+    person("Stefan", "Wager", role = "ctb"),
+    person("Stanford University", role = "cph"))
+Description: Synthetic difference-in-differences, synthetic control and
+    difference-in-differences estimates of the average treatment effect on
+    the treated in panel data, following Arkhangelsky, Athey, Hirshberg,
+    Imbens and Wager (2021) <doi:10.1257/aer.20190159> and the Stata
+    implementation of Clarke, Pailanir, Athey and Imbens (2024)
+    <doi:10.1177/1536867X241297914>. Supports simultaneous and staggered
+    treatment adoption, bootstrap, jackknife and placebo inference,
+    covariate adjustment, and parallel replications in compiled code.
+    Derived from the synthdid package by the authors of the 2021 paper.
 Depends:
     R (>= 3.4)
 Imports:
-    mvtnorm
-License: GPL (>= 2) | BSD_3_clause + file LICENSE
+    mvtnorm,
+    Rcpp,
+    stats,
+    utils
+LinkingTo:
+    Rcpp,
+    RcppArmadillo
+License: BSD_3_clause + file LICENSE
+URL: https://github.com/alcocer-jj/sdid
+BugReports: https://github.com/alcocer-jj/sdid/issues
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.1
 Suggests:
+    generics,
+    ggrepel,
+    tibble,
+    data.table,
     testthat,
-    ggplot2,
+    withr,
+    ggplot2 (>= 3.4.0),
+    scales,
     CVXR
-URL: https://github.com/synth-inference/synthdid
-BugReports: https://github.com/synth-inference/synthdid/issues
+Config/roxygen2/version: 8.0.0

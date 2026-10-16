@@ -12,3 +12,4 @@ synthdid_effect_curve(estimate)
 \description{
 Outputs the effect curve that was averaged to produce our estimate
 }
+\keyword{internal}

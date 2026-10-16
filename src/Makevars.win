@@ -1,0 +1,5 @@
+PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+# Rebuild objects that include the shared header when it changes.
+all: $(SHLIB)
+solver.o resample.o: synthdid_core.h

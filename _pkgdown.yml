@@ -1,45 +1,37 @@
+url: https://alcocer-jj.github.io/sdid/
+
 navbar:
   type: default
   left:
-  - text: "Get started"
-    href: articles/synthdid.html
-  - text: "More on Plotting"
-    href: articles/more-plotting.html
-  - text: "Paper results"
-    href: articles/paper-results.html
   - text: "Reference"
     href: reference/index.html
+  - text: "News"
+    href: news/index.html
   right:
   - icon: fa-github fa-lg
-    href: https://github.com/synth-inference/synthdid
+    href: https://github.com/alcocer-jj/sdid
 
 reference:
-  - title: Estimators
+  - title: Estimation
     contents:
-      - synthdid_estimate
-      - sc_estimate
-      - did_estimate
-      - vcov.synthdid_estimate
-      - synthdid_effect_curve
+      - sdid
+      - sdid-methods
+      - sdid-tidiers
+      - weights.sdid
 
-  - title: Summary methods
+  - title: Plots and placebo tests (require ggplot2)
     contents:
-      - synthdid_controls
-      - summary.synthdid_estimate
-      - print.synthdid_estimate
-
-  - title: Utilities
-    contents:
-      - panel.matrices
-
-  - title: Plots (requires ggplot2)
-    contents:
-    - plot.synthdid_estimate
-    - synthdid_plot
-    - synthdid_units_plot
-    - synthdid_placebo_plot
-    - synthdid_rmse_plot
+      - sdid_plot
+      - sdid_units_plot
+      - sdid_placebo_plot
+      - sdid_placebo
 
   - title: Data sets
     contents:
       - california_prop99
+      - CPS
+      - PENN
+
+  - title: Package
+    contents:
+      - sdid-package

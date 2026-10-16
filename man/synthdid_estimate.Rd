@@ -2,7 +2,8 @@
 % Please edit documentation in R/synthdid.R
 \name{synthdid_estimate}
 \alias{synthdid_estimate}
-\title{Computes the synthetic diff-in-diff estimate for an average treatment effect on a treated block.}
+\title{Computes the synthetic diff-in-diff estimate for an average treatment effect
+on a treated block.}
 \usage{
 synthdid_estimate(
   Y,
@@ -22,25 +23,37 @@ synthdid_estimate(
   min.decrease = 1e-05 * noise.level,
   max.iter = 10000,
   sparsify = sparsify_function,
-  max.iter.pre.sparsify = 100
+  max.iter.pre.sparsify = 100,
+  covariate.method = c("optimized", "projected"),
+  standardize = TRUE,
+  projection.sample = c("controls", "untreated")
 )
 }
 \arguments{
 \item{Y}{the observation matrix.}
 
-\item{N0}{the number of control units (N_co in the paper). Rows 1-N0 of Y correspond to the control units.}
+\item{N0}{the number of control units (N_co in the paper). Rows 1-N0 of Y
+correspond to the control units.}
 
-\item{T0}{the number of pre-treatment time steps (T_pre in the paper). Columns 1-T0 of Y correspond to pre-treatment time steps.}
+\item{T0}{the number of pre-treatment time steps (T_pre in the paper).
+Columns 1-T0 of Y correspond to pre-treatment time steps.}
 
-\item{X}{an optional 3-D array of time-varying covariates. Shape should be N X T X C for C covariates.}
+\item{X}{an optional 3-D array of time-varying covariates. Shape should be N
+X T X C for C covariates, with rows and columns in the same order as
+Y. panel.matrices builds it from long data with its covariates
+argument.}
 
-\item{noise.level, }{an estimate of the noise standard deviation sigma. Defaults to the standard deviation of first differences of Y.}
+\item{noise.level, }{an estimate of the noise standard deviation sigma.
+Defaults to the standard deviation of first differences of Y.}
 
-\item{eta.omega}{determines the tuning parameter zeta.omega = eta.omega * noise.level. Defaults to the value (N_tr T_post)^(1/4).}
+\item{eta.omega}{determines the tuning parameter zeta.omega = eta.omega *
+noise.level. Defaults to the value (N_tr T_post)^(1/4).}
 
-\item{eta.lambda}{analogous for lambda.  Defaults to an 'infinitesimal' value 1e-6.}
+\item{eta.lambda}{analogous for lambda. Defaults to an 'infinitesimal' value
+1e-6.}
 
-\item{zeta.omega}{if passed, overrides the default zeta.omega = eta.omega * noise.level. Deprecated.}
+\item{zeta.omega}{if passed, overrides the default zeta.omega = eta.omega *
+noise.level. Deprecated.}
 
 \item{zeta.lambda}{analogous for lambda.}
 
@@ -48,32 +61,101 @@ synthdid_estimate(
 
 \item{lambda.intercept}{Binary. Use an intercept when estimating lambda.}
 
-\item{weights}{a list with fields lambda and omega. If non-null weights$lambda is passed,
-we use them instead of estimating lambda weights. Same for weights$omega.}
+\item{weights}{a list with fields lambda and omega. If non-null
+weights$lambda is passed, we use them instead of estimating lambda
+weights. Same for weights$omega.}
 
-\item{update.omega}{If true, solve for omega using the passed value of weights$omega only as an initialization.
-If false, use it exactly as passed. Defaults to false if a non-null value of weights$omega is passed.}
+\item{update.omega}{If true, solve for omega using the passed value of
+weights$omega only as an initialization. If false, use it exactly as
+passed. Defaults to false if a non-null value of weights$omega is
+passed.}
 
 \item{update.lambda}{Analogous.}
 
-\item{min.decrease}{Tunes a stopping criterion for our weight estimator. Stop after an iteration results in a decrease
-in penalized MSE smaller than min.decrease^2.}
+\item{min.decrease}{Tunes a stopping criterion for our weight estimator. Stop
+after an iteration results in a decrease in penalized MSE smaller
+than min.decrease^2.}
 
-\item{max.iter}{A fallback stopping criterion for our weight estimator. Stop after this number of iterations.}
+\item{max.iter}{A fallback stopping criterion for our weight estimator. Stop
+after this number of iterations.}
 
-\item{sparsify}{A function mapping a numeric vector to a (presumably sparser) numeric vector of the same shape, which must sum to one.
-If not null, we try to estimate sparse weights via a second round of Frank-Wolfe optimization
-initialized at sparsify( the solution to the first round ).}
+\item{sparsify}{A function mapping a numeric vector to a (presumably sparser)
+numeric vector of the same shape, which must sum to one. If
+not null, we try to estimate sparse weights via a second
+round of Frank-Wolfe optimization initialized at sparsify(
+the solution to the first round ).}
 
-\item{max.iter.pre.sparsify}{Analogous to max.iter, but for the pre-sparsification first-round of optimization.
-Not used if sparsify=NULL.}
+\item{max.iter.pre.sparsify}{Analogous to max.iter, but for the
+pre-sparsification first-round of optimization. Not
+used if sparsify=NULL.}
+
+\item{covariate.method}{How covariates in X are adjusted for, either
+"optimized" (the default) or "projected". See the Covariates section.
+Ignored without covariates.}
+
+\item{standardize}{For covariate.method = "optimized", TRUE (the default) to
+standardize each covariate to mean zero and standard deviation one
+before solving, with the coefficients reported in the covariates' own
+units, or FALSE to use the covariates as given. Ignored by the
+projected method.}
+
+\item{projection.sample}{For covariate.method = "projected", the observations
+used to estimate the coefficients: "controls" (the default), the
+control units in every period, or "untreated", which adds the treated
+units' pre-treatment periods. Ignored by the optimized method.}
 }
 \value{
-An average treatment effect estimate with 'weights' and 'setup' attached as attributes.
-'weights' contains the estimated weights lambda and omega and corresponding intercepts,
-as well as regression coefficients beta if X is passed.
+An average treatment effect estimate with 'weights' and 'setup'
+attached as attributes. 'weights' contains the estimated weights
+lambda and omega and corresponding intercepts, as well as regression
+coefficients beta, in the covariates' own units, if X is passed.
 'setup' is a list describing the problem passed in: Y, N0, T0, X.
+'opts' records the options that define the estimator, including
+sparsify and max.iter.pre.sparsify. Standard errors and placebo
+estimates re-run the estimator with these options.
 }
 \description{
-See 'Synthetic Difference in Differences' by Arkhangelsky et al. This implements Algorithm 1.
+See 'Synthetic Difference in Differences' by Arkhangelsky et al. This
+implements Algorithm 1.
 }
+\section{Covariates}{
+ Covariates are removed from the outcome as a regression
+adjustment, so that the estimator is applied to Y - X beta, following
+footnote 4 of Arkhangelsky et al. There are two ways to estimate beta, as in
+the Stata sdid command of Clarke, Pailañir, Athey and Imbens.
+
+The optimized method, the default, estimates beta jointly with the weights,
+by gradient steps on beta alternating with the weight updates. Those steps
+take no account of each covariate's scale, so covariates with very large or
+very small values can stall the solver or make it diverge. Standardizing, the
+default, avoids this. The centers and scales are computed once from every
+cell of X and reused in every replication of the standard errors. If the
+solver reaches max.iter before its stopping rule is met, synthdid_estimate
+warns, and if the coefficients become non-finite, it stops with an error.
+Weights are not sparsified when covariates are adjusted for in this way.
+
+The projected method, proposed by Kranz (2022), estimates beta by a
+regression of the outcome on the covariates with unit and time fixed effects,
+using only observations without treatment, and then applies the estimator to
+the adjusted outcome exactly as it would without covariates. By default the
+regression uses only the control units, as the Stata command does.
+projection.sample = "untreated" also uses the treated units' pre-treatment
+periods, as Kranz proposes. That sample is larger, but it relies on the
+treated units' outcomes and covariates being unaffected by the treatment
+before it begins. The projected method does not depend on the covariates'
+units, and defaults computed from Y, such as noise.level, are computed from
+the adjusted outcome.
+
+Under both methods, standard errors re-estimate beta in every replication,
+including each jackknife sample, where the weights are held fixed.
+}
+
+\references{
+Sebastian Kranz. "Synthetic Difference-in-Differences with
+Time-Varying Covariates". 2022. \url{https://github.com/skranz/xsynthdid}.
+
+Damian Clarke, Daniel Pailañir, Susan Athey, and Guido Imbens. "On Synthetic
+Difference-in-Differences and Related Estimation Methods in Stata". The
+Stata Journal 24(4), 2024.
+}
+\keyword{internal}

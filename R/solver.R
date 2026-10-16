@@ -1,103 +1,142 @@
-contract3 = function(X, v) {
+contract3 <- function(X, v) {
   stopifnot(length(dim(X)) == 3, dim(X)[3] == length(v))
-  out = array(0, dim = dim(X)[1:2])
-  if (length(v) == 0) { return(out) }
+  out <- array(0, dim = dim(X)[1:2])
+  if (length(v) == 0) {
+    return(out)
+  }
   for (ii in 1:length(v)) {
-    out = out + v[ii] * X[, , ii]
+    out <- out + v[ii] * X[,, ii]
   }
   return(out)
 }
 
-# a Frank-Wolfe step for \\Ax - b||^2 + eta * ||x||^2 with x in unit simplex.
-fw.step = function(A, x, b, eta, alpha = NULL) {
-  Ax = A %*% x
-  half.grad = t(Ax - b) %*% A + eta * x
-  i = which.min(half.grad)
-  if (!is.null(alpha)) {
-    x = x * (1 - alpha)
-    x[i] = x[i] + alpha
-    return(x)
-  } else {
-    d.x = -x; d.x[i] = 1 - x[i]
-    if (all(d.x == 0)) { return(x) }
-    d.err = A[, i] - Ax
-    step = -t(c(half.grad)) %*% d.x / (sum(d.err^2) + eta * sum(d.x^2))
-    constrained.step = min(1, max(0, step))
-    return(x + constrained.step * d.x)
+# Reads the solver options. Returns the mode code expected by the compiled
+# code (0 auto, 1 direct, 2 gram) and the Gram matrix memory cap in bytes.
+solver_config <- function() {
+  mode <- getOption("sdid.solver", "auto")
+  if (
+    !(is.character(mode) &&
+      length(mode) == 1 &&
+      mode %in% c("auto", "direct", "gram"))
+  ) {
+    stop('option sdid.solver must be one of "auto", "direct" or "gram"')
   }
+  max.mb <- getOption("sdid.gram.max.mb", 64)
+  if (
+    !(is.numeric(max.mb) &&
+      length(max.mb) == 1 &&
+      !is.na(max.mb) &&
+      max.mb >= 0)
+  ) {
+    stop("option sdid.gram.max.mb must be a single non-negative number")
+  }
+  list(
+    mode = match(mode, c("auto", "direct", "gram")) - 1L,
+    max.bytes = as.numeric(max.mb) * 2^20
+  )
 }
 
-# a Frank-Wolfe solver for synthetic control weights using exact line search
-sc.weight.fw = function(Y, zeta, intercept = TRUE, lambda = NULL, min.decrease = 1e-3, max.iter = 1000) {
-  T0 = ncol(Y) - 1
-  N0 = nrow(Y)
-  if (is.null(lambda)) { lambda = rep(1 / T0, T0) }
-  if (intercept) {
-    Y = apply(Y, 2, function(col) { col - mean(col) })
+# Frank-Wolfe solver for synthetic control weights using exact line search.
+# The iterations run in compiled code, see src/synthdid_core.h. The gradient
+# method follows the sdid.solver and sdid.gram.max.mb options. The
+# returned gram.start is the iteration at which the solver switched to the
+# Gram method, or NA if it never did.
+sc.weight.fw <- function(
+  Y,
+  zeta,
+  intercept = TRUE,
+  lambda = NULL,
+  min.decrease = 1e-3,
+  max.iter = 1000
+) {
+  T0 <- ncol(Y) - 1
+  if (is.null(lambda)) {
+    lambda <- rep(1 / T0, T0)
   }
-
-  t = 0
-  vals = rep(NA, max.iter)
-  A = Y[, 1:T0]
-  b = Y[, T0 + 1]
-  eta = N0 * Re(zeta^2)
-  while (t < max.iter && (t < 2 || vals[t - 1] - vals[t] > min.decrease^2)) {
-    t = t + 1
-    lambda.p = fw.step(A, lambda, b, eta)
-    lambda = lambda.p
-    err = Y[1:N0, ] %*% c(lambda, -1)
-    vals[t] = Re(zeta^2) * sum(lambda^2) + sum(err^2) / N0
-  }
-  list(lambda = lambda, vals = vals)
+  stopifnot(
+    is.matrix(Y),
+    T0 >= 1,
+    nrow(Y) >= 1,
+    length(lambda) == T0,
+    all(is.finite(Y))
+  )
+  cfg <- solver_config()
+  .sc_weight_fw_cpp(
+    Y,
+    Re(zeta^2),
+    isTRUE(intercept),
+    as.numeric(lambda),
+    as.numeric(min.decrease),
+    as.integer(max.iter),
+    cfg$mode,
+    cfg$max.bytes
+  )
 }
 
-# A Frank-Wolfe + Gradient solver for lambda, omega, and beta when there are covariates
-# Uses the exact line search Frank-Wolfe steps for lambda, omega and (1/t)*gradient steps for beta
-# pass update.lambda=FALSE/update.omega=FALSE to fix those weights at initial values, defaulting to uniform 1/T0 and 1/N0
-sc.weight.fw.covariates = function(Y, X = array(0, dim = c(dim(Y), 0)), zeta.lambda = 0, zeta.omega = 0,
-                                   lambda.intercept = TRUE, omega.intercept = TRUE,
-                                   min.decrease = 1e-3, max.iter = 1000,
-                                   lambda = NULL, omega = NULL, beta = NULL, update.lambda = TRUE, update.omega = TRUE) {
-  stopifnot(length(dim(Y)) == 2, length(dim(X)) == 3, all(dim(Y) == dim(X)[1:2]), all(is.finite(Y)), all(is.finite(X)))
-  T0 = ncol(Y) - 1
-  N0 = nrow(Y) - 1
-  if (length(dim(X)) == 2) { dim(X) = c(dim(X), 1) }
-  if (is.null(lambda)) {  lambda = rep(1 / T0, T0)   }
-  if (is.null(omega)) {  omega = rep(1 / N0, N0)    }
-  if (is.null(beta)) {  beta = rep(0, dim(X)[3]) }
-
-  update.weights = function(Y, lambda, omega) {
-    Y.lambda = if (lambda.intercept) { apply(Y[1:N0, ], 2, function(row) { row - mean(row) }) } else { Y[1:N0, ] }
-    if (update.lambda) { lambda = fw.step(Y.lambda[, 1:T0], lambda, Y.lambda[, T0 + 1], N0 * Re(zeta.lambda^2)) }
-    err.lambda = Y.lambda %*% c(lambda, -1)
-
-    Y.omega = if (omega.intercept) { apply(t(Y[, 1:T0]), 2, function(row) { row - mean(row) }) } else { t(Y[, 1:T0]) }
-    if (update.omega) { omega = fw.step(Y.omega[, 1:N0], omega, Y.omega[, N0 + 1], T0 * Re(zeta.omega^2)) }
-    err.omega = Y.omega %*% c(omega, -1)
-
-    val = Re(zeta.omega^2) * sum(omega^2) + Re(zeta.lambda^2) * sum(lambda^2) + sum(err.omega^2) / T0 + sum(err.lambda^2) / N0
-    list(val = val, lambda = lambda, omega = omega, err.lambda = err.lambda, err.omega = err.omega)
+# A Frank-Wolfe plus gradient solver for lambda, omega, and beta when there are
+# covariates. Uses exact line search Frank-Wolfe steps for lambda and omega and
+# (1/t) gradient steps for beta. Pass update.lambda=FALSE or update.omega=FALSE
+# to fix those weights at their initial values, which default to uniform 1/T0
+# and 1/N0. The iterations run in compiled code, see src/synthdid_core.h. This
+# solver always uses the direct gradient, since the outcome matrix changes as
+# beta is updated.
+sc.weight.fw.covariates <- function(
+  Y,
+  X = array(0, dim = c(dim(Y), 0)),
+  zeta.lambda = 0,
+  zeta.omega = 0,
+  lambda.intercept = TRUE,
+  omega.intercept = TRUE,
+  min.decrease = 1e-3,
+  max.iter = 1000,
+  lambda = NULL,
+  omega = NULL,
+  beta = NULL,
+  update.lambda = TRUE,
+  update.omega = TRUE
+) {
+  if (length(dim(X)) == 2) {
+    dim(X) <- c(dim(X), 1)
   }
-
-  vals = rep(NA, max.iter)
-  t = 0
-  Y.beta = Y - contract3(X, beta)
-  weights = update.weights(Y.beta, lambda, omega)
-  # state is kept in weights$lambda, weights$omega, beta
-  while (t < max.iter && (t < 2 || abs(vals[t - 1] - vals[t]) > min.decrease^2)) {
-    t = t + 1
-    grad.beta = -if (dim(X)[3] == 0) { c() } else {
-      apply(X, 3, function(Xi) {
-        t(weights$err.lambda) %*% Xi[1:N0, ] %*% c(weights$lambda, -1) / N0 +
-          t(weights$err.omega) %*% t(Xi[, 1:T0]) %*% c(weights$omega, -1) / T0
-      })
-    }
-
-    alpha = 1 / t
-    beta = beta - alpha * grad.beta
-    Y.beta = Y - contract3(X, beta)
-    weights = update.weights(Y.beta, weights$lambda, weights$omega)
-    vals[t] = weights$val
+  stopifnot(
+    length(dim(Y)) == 2,
+    length(dim(X)) == 3,
+    all(dim(Y) == dim(X)[1:2]),
+    all(is.finite(Y)),
+    all(is.finite(X))
+  )
+  T0 <- ncol(Y) - 1
+  N0 <- nrow(Y) - 1
+  if (is.null(lambda)) {
+    lambda <- rep(1 / T0, T0)
   }
-  list(lambda = weights$lambda, omega = weights$omega, beta = beta, vals = vals)
+  if (is.null(omega)) {
+    omega <- rep(1 / N0, N0)
+  }
+  if (is.null(beta)) {
+    beta <- rep(0, dim(X)[3])
+  }
+  stopifnot(
+    T0 >= 1,
+    N0 >= 1,
+    length(lambda) == T0,
+    length(omega) == N0,
+    length(beta) == dim(X)[3]
+  )
+  storage.mode(X) <- "double"
+  .sc_weight_fw_covariates_cpp(
+    Y,
+    X,
+    Re(zeta.lambda^2),
+    Re(zeta.omega^2),
+    isTRUE(lambda.intercept),
+    isTRUE(omega.intercept),
+    as.numeric(min.decrease),
+    as.integer(max.iter),
+    as.numeric(lambda),
+    as.numeric(omega),
+    as.numeric(beta),
+    isTRUE(update.lambda),
+    isTRUE(update.omega)
+  )
 }

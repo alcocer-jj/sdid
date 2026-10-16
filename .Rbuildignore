@@ -9,3 +9,5 @@
 ^pkgdown$
 ^DEVELOPING\.md$
 ^data/README\.md$
+^CHANGES-AUDIT\.md$
+^tests/testthat/fixtures/quota\.csv$

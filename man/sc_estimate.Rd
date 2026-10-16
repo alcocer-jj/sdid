@@ -2,28 +2,40 @@
 % Please edit documentation in R/synthdid.R
 \name{sc_estimate}
 \alias{sc_estimate}
-\title{synthdid_estimate for synthetic control estimates.
-Takes all the same parameters, but by default, passes options to use the synthetic control estimator
-By default, this uses only 'infinitesimal' ridge regularization when estimating the weights.}
+\title{synthdid_estimate for synthetic control estimates. Takes all the same
+parameters, but by default, passes options to use the synthetic control
+estimator By default, this uses only 'infinitesimal' ridge regularization
+when estimating the weights.}
 \usage{
-sc_estimate(Y, N0, T0, eta.omega = 1e-06, ...)
+sc_estimate(Y, N0, T0, eta.omega = 1e-06, ..., omega.intercept = FALSE)
 }
 \arguments{
 \item{Y}{the observation matrix.}
 
-\item{N0}{the number of control units. Rows 1-N0 of Y correspond to the control units.}
+\item{N0}{the number of control units. Rows 1-N0 of Y correspond to the
+control units.}
 
-\item{T0}{the number of pre-treatment time steps. Columns 1-T0 of Y correspond to pre-treatment time steps.}
+\item{T0}{the number of pre-treatment time steps. Columns 1-T0 of Y
+correspond to pre-treatment time steps.}
 
-\item{eta.omega}{determines the level of ridge regularization, zeta.omega = eta.omega * noise.level, as in synthdid_estimate.}
+\item{eta.omega}{determines the level of ridge regularization, zeta.omega =
+eta.omega * noise.level, as in synthdid_estimate.}
 
 \item{...}{additional options for synthdid_estimate}
+
+\item{omega.intercept}{Binary. Use an intercept when estimating omega.
+Defaults to FALSE, as in synthetic control. It comes after \code{...}, so
+it can only be passed by name. Making it a formal argument lets the
+value stored in an estimate's options, which sdid_placebo passes back
+in, replace the default instead of duplicating it.}
 }
 \value{
 an object like that returned by synthdid_estimate
 }
 \description{
-synthdid_estimate for synthetic control estimates.
-Takes all the same parameters, but by default, passes options to use the synthetic control estimator
-By default, this uses only 'infinitesimal' ridge regularization when estimating the weights.
+synthdid_estimate for synthetic control estimates. Takes all the same
+parameters, but by default, passes options to use the synthetic control
+estimator By default, this uses only 'infinitesimal' ridge regularization
+when estimating the weights.
 }
+\keyword{internal}

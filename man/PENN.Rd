@@ -5,7 +5,7 @@
 \alias{PENN}
 \title{PENN}
 \format{
-A data frame with 3219 rows and 5 variables.
+A data frame with 5328 rows and 5 variables.
 \describe{
 \item{country}{country}
 \item{year}{year}

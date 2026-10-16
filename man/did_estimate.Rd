@@ -2,17 +2,19 @@
 % Please edit documentation in R/synthdid.R
 \name{did_estimate}
 \alias{did_estimate}
-\title{synthdid_estimate for diff-in-diff estimates.
-Takes all the same parameters, but by default, passes options to use the diff-in-diff estimator}
+\title{synthdid_estimate for diff-in-diff estimates. Takes all the same parameters,
+but by default, passes options to use the diff-in-diff estimator}
 \usage{
 did_estimate(Y, N0, T0, ...)
 }
 \arguments{
 \item{Y}{the observation matrix.}
 
-\item{N0}{the number of control units. Rows 1-N0 of Y correspond to the control units.}
+\item{N0}{the number of control units. Rows 1-N0 of Y correspond to the
+control units.}
 
-\item{T0}{the number of pre-treatment time steps. Columns 1-T0 of Y correspond to pre-treatment time steps.}
+\item{T0}{the number of pre-treatment time steps. Columns 1-T0 of Y
+correspond to pre-treatment time steps.}
 
 \item{...}{additional  options for synthdid_estimate}
 }
@@ -20,6 +22,7 @@ did_estimate(Y, N0, T0, ...)
 an object like that returned by synthdid_estimate
 }
 \description{
-synthdid_estimate for diff-in-diff estimates.
-Takes all the same parameters, but by default, passes options to use the diff-in-diff estimator
+synthdid_estimate for diff-in-diff estimates. Takes all the same parameters,
+but by default, passes options to use the diff-in-diff estimator
 }
+\keyword{internal}

@@ -2,8 +2,8 @@
 % Please edit documentation in R/synthdid.R
 \name{sparsify_function}
 \alias{sparsify_function}
-\title{A function mapping a numeric vector to a (presumably sparser) numeric vector of the same shape to
-be passed onto synthdid_estimate.}
+\title{A function mapping a numeric vector to a (presumably sparser) numeric vector
+of the same shape to be passed onto synthdid_estimate.}
 \usage{
 sparsify_function(v)
 }
@@ -11,6 +11,7 @@ sparsify_function(v)
 \item{v}{a vector}
 }
 \description{
-A function mapping a numeric vector to a (presumably sparser) numeric vector of the same shape to
-be passed onto synthdid_estimate.
+A function mapping a numeric vector to a (presumably sparser) numeric vector
+of the same shape to be passed onto synthdid_estimate.
 }
+\keyword{internal}
