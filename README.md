@@ -6,11 +6,14 @@ The package derives from [`synthdid`](https://github.com/synth-inference/synthdi
 
 ## Installation
 
-The development version can be installed from GitHub.
+The development version can be installed from GitHub or R-Universe.
 
 ```r
 # install.packages("remotes")
 remotes::install_github("alcocer-jj/sdid")
+
+install.packages("sdid", repos = c("https://alcocer-jj.r-universe.dev",
+                                   "https://cloud.r-project.org"))
 ```
 
 ## Syntax
