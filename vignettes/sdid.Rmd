@@ -1,0 +1,142 @@
+---
+title: "Getting started with sdid"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with sdid}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 4.5)
+options(sdid.num.threads = 2)
+```
+
+sdid estimates the effect of a treatment on the treated units of a panel with synthetic difference-in-differences (Arkhangelsky et al. 2021), in the manner of the Stata command `sdid` (Clarke, Pailañir, Athey and Imbens 2024). It handles designs in which every treated unit is first treated in the same period, and staggered designs in which units are first treated in different periods.
+
+```{r}
+library(sdid)
+```
+
+## Estimating an effect
+
+The data are a balanced panel in long format, one row per unit and period. The treatment column is 1 for a treated unit from its first treated period onward, and 0 otherwise. In the Proposition 99 data, California is treated from 1989.
+
+```{r}
+data(california_prop99)
+head(california_prop99)
+```
+
+`sdid()` takes the panel and the names of its columns, and the method of inference, which must be given. Like the Stata command, it prints a header describing the data before estimating, then the results.
+
+```{r}
+fit = sdid(california_prop99, outcome = "PacksPerCapita", unit = "State",
+           time = "Year", treatment = "treated", vce = "placebo", seed = 1213,
+           graph = FALSE)
+```
+
+`graph = TRUE`, the default, also draws the trends plot, and `quietly = TRUE` prints nothing, for example within a loop.
+
+## Reading the result
+
+The result prints as the tables above, and standard methods extract its parts.
+
+```{r}
+coef(fit)
+confint(fit, level = 0.9)
+nobs(fit)
+```
+
+`summary()` adds, for each cohort, how many controls and pre-treatment periods carry weight, and the largest unit weights. `weights()` returns the unit and time weights as data frames.
+
+```{r}
+w = weights(fit)
+head(w$omega[order(-w$omega$`1989`), ])
+w$lambda[w$lambda$`1989` > 0 & !is.na(w$lambda$`1989`), ]
+```
+
+The unit weights pick the states that, together, track California's trend before 1989. The time weights pick the pre-treatment years whose average serves as the baseline for the comparison, here 1986 to 1988.
+
+## Inference
+
+`vce` chooses how the standard error is computed.
+
+- `"placebo"` gives units never treated the treatment pattern of the treated units and re-estimates, over `reps` replications. It works with a single treated unit, as here, and assumes the controls' noise resembles the treated units'.
+- `"bootstrap"` resamples whole units over `reps` replications, and needs more than one treated unit.
+- `"jackknife"` leaves out one unit at a time with the weights held fixed. For a staggered design it needs more than one treated unit in every cohort.
+- `"noinference"` skips inference.
+
+Intervals and p-values use the normal approximation. `alternative` chooses a one-sided test, whose direction should be chosen before seeing the estimate.
+
+```{r}
+less = sdid(california_prop99, "PacksPerCapita", "State", "Year", "treated",
+            vce = "placebo", seed = 1213, alternative = "less",
+            graph = FALSE, quietly = TRUE)
+confint(less)
+```
+
+A one-sided interval is open in the direction of its test. Its bound at 95% is the bound of the two-sided interval at 90%.
+
+## Other estimators
+
+`method` estimates synthetic control (`"sc"`) or difference-in-differences (`"did"`) with the same data and inference. The Prop 99 comparison is in `vignette("paper-results", package = "sdid")`.
+
+## Covariates
+
+Time-varying covariates are adjusted for with `covariates`. The projected method regresses the outcome on the covariates and fixed effects, then estimates on the adjusted outcome. The optimized method, the default, estimates their coefficients jointly with the weights.
+
+```{r}
+data(CPS)
+cov = sdid(CPS, "log_wage", "state", "year", "min_wage", vce = "noinference",
+           covariates = c("hours", "urate"), covariate.method = "projected",
+           graph = FALSE, quietly = TRUE)
+cov$beta
+```
+
+## Staggered adoption
+
+When treated units are first treated in different periods, each cohort of units first treated in the same period is estimated against the units never treated, and the overall effect averages the cohorts' effects, weighted by their numbers of treated units and of periods after adoption. The panel below is simulated, with three cohorts adopting in periods 6, 9 and 12.
+
+```{r}
+set.seed(1)
+N = 30; periods = 15
+adoption = c(rep(NA, 21), rep(c(6, 9, 12), each = 3))
+panel = expand.grid(time = seq_len(periods), unit = sprintf("u%02d", seq_len(N)))
+i = as.integer(panel$unit)
+panel$treat = as.integer(!is.na(adoption[i]) & panel$time >= adoption[i])
+panel$y = rnorm(N)[i] + 0.3 * panel$time + rnorm(nrow(panel), sd = 0.2) +
+  2 * panel$treat
+
+staggered = sdid(panel, "y", "unit", "time", "treat", vce = "bootstrap",
+                 reps = 50, seed = 2, graph = FALSE)
+```
+
+The cohorts' estimates, standard errors and intervals are printed under the overall effect and stored in `staggered$cohorts`. The plots draw a panel per cohort.
+
+The quota data of Bhalotra et al. (2023), the staggered example of the Stata command, can be read from the command's repository.
+
+```{r, eval = FALSE}
+quota = haven::read_dta(paste0(
+  "https://github.com/Daniel-Pailanir/sdid/raw/main/",
+  "simulations/cluster_data/quota_example_cluster.dta"))
+sdid(quota, "womparl", "country", "year", "quota", vce = "bootstrap",
+     reps = 200, seed = 1)
+```
+
+## Tables
+
+Results work with modelsummary and other packages that read results with `tidy()` and `glance()`.
+
+```{r, eval = FALSE}
+library(modelsummary)
+modelsummary(list("Prop 99" = fit, "Simulated" = staggered), labels = "ATT")
+modelsummary(staggered, cohorts = TRUE)
+```
+
+## References
+
+Arkhangelsky, D., Athey, S., Hirshberg, D. A., Imbens, G. W., and Wager, S. (2021). Synthetic Difference-in-Differences. *American Economic Review* 111(12), 4088-4118.
+
+Bhalotra, S., Clarke, D., Gomes, J. F., and Venkataramani, A. (2023). Maternal Mortality and Women's Political Power. *Journal of the European Economic Association* 21(5), 2172-2208.
+
+Clarke, D., Pailañir, D., Athey, S., and Imbens, G. (2024). On Synthetic Difference-in-Differences and Related Estimation Methods in Stata. *The Stata Journal* 24(4), 557-598.

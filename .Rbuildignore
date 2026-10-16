@@ -2,7 +2,6 @@
 ^\.Rproj\.user$
 ^experiments
 ^tests/benchmarks
-^vignettes
 ^azure-pipelines\.yml$
 ^_pkgdown\.yml$
 ^docs$
@@ -11,3 +10,5 @@
 ^data/README\.md$
 ^CHANGES-AUDIT\.md$
 ^tests/testthat/fixtures/quota\.csv$
+^LICENSE\.md$
+^dev

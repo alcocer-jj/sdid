@@ -4,6 +4,8 @@ First release of `sdid`, derived from synthdid 0.0.9 by Arkhangelsky, Athey, Hir
 
 ## Function consolidation
 
+* Three vignettes, rewritten around `sdid()`, cover getting started, plotting results and Proposition 99 with the three estimators. They are now built with the package, and the website lists them under Get started and Articles.
+
 * `sdid()` now estimates average treatment effects on the treated (ATT) similar to the Stata command, `sdid`. It accepts long format panel dataset, it automatically detects whether a staggered treatment approach is needed, and it handles all three approaches (i.e., SDiD, SCM, and DiD) through its `method` argument.
 * Inference must be chosen with `vce` parameter (`"bootstrap"`, `"jackknife"`, `"placebo"`, or `"noinference"`).
 * Like in Stata, `sdid()` prints a header before estimating, it reports the progress of inference replications, and prints the ATT alongside its z statistic, two-sided normal p-value, and confidence intervals at whatever `level` you set.
@@ -31,9 +33,10 @@ First release of `sdid`, derived from synthdid 0.0.9 by Arkhangelsky, Athey, Hir
 
 * `sdid_plot()`, `sdid_units_plot()`, `sdid_placebo()`, and `sdid_placebo_plot()` replace `synthdid_plot()`, `synthdid_units_plot()`, `synthdid_placebo()`, and `synthdid_placebo_plot()`, and take the result of `sdid()`. A staggered design is drawn with one panel per adoption cohort.
 * `sdid_plot()` has two styles. The default, `"minimal"`, draws the treated trajectory solid and the synthetic control dashed, the time weights as outlined bands with their own axis aligned with the outcome axis at zero, and the last pre-treatment period as a red dashed line. `"effects"` adds a simplified difference-in-differences diagram.
-* `sdid_plot()` and `sdid_placebo_plot()` choose the ticks of the outcome and time axes with `ticks`. The default, `"loose"`, uses about five nice ticks covering the data and widens each axis to them, as the Stata command does by default. `"loose.more"` uses more ticks when about five would leave more than 15% of an axis beyond the data, and `"minmax"` labels the smallest and largest values at the ends of each axis, with nice ticks between them. The axis lines of a single panel run between the ends of each axis.
+* `sdid_plot()` and `sdid_placebo_plot()` label the outcome and time axes with about five nice ticks covering the data, as the Stata command does by default, each axis running between its outermost ticks.
 * A time axis whose periods are whole numbers, such as years, gets ticks only at whole numbers, never at half years such as 2002.5.
 * `sdid_plot()` and `sdid_placebo_plot()` take `x.breaks` and `y.breaks`, ticks chosen by the user, which the axis range, frame, cohort labels and the alignment of the time weights' band follow.
+* `sdid_plot()` and `sdid_units_plot()` take a named list of `sdid()` results, each with a single adoption period, drawing each in its own panel labeled by its name. Panels are always stacked in a column. `facet` and `facet.vertical` are removed, the list's names labeling the panels, and `lambda.comparable` defaults to FALSE.
 * A cohort's label under the bottom panel moves, at drawing time, just far enough to clear the time axis's labels, or to a line below them if there is no room, so that every label is shown.
 * Panels stacked in a column, as for a staggered design's cohorts, each get an open frame and their own time-weight axis, with the time axis only under the bottom panel. A staggered design's cohorts are labeled at their adoption periods under each panel rather than in grey strips, and other panels have a plain title above them. The treatment line of every plot is drawn midway between the last period before treatment and the first period treated.
 * `sdid_units_plot()` is redesigned. Its default, `type = "scatter"`, plots each control's weight against the estimate it gives alone, whose weighted average is the effect, drawing every control, those without weight as open circles, with the effect as a red line. `type = "bars"` draws a bar for each weighted control from the effect to its own estimate, ordered by weight, with the weight at its end. `label.units` names every control, those with weight or the n heaviest, by default all in a single panel and ten in several, and the bars draw only the controls it names. `cohort` plots one cohort of a staggered design, which otherwise has a panel for each. Labels are placed with ggrepel when it is installed. `negligible.threshold`, `negligible.alpha` and `units` are removed, and `weighted.only` keeps only weighted controls in the scatter.
@@ -53,7 +56,6 @@ First release of `sdid`, derived from synthdid 0.0.9 by Arkhangelsky, Athey, Hir
 * A line-search edge case that could produce `NaN` weights is fixed.
 * The in-time placebo of synthetic control estimates no longer fails with a duplicated `omega.intercept` argument.
 * Replications now use the fitted estimator's `sparsify` settings rather than the defaults.
-* Panel labels passed through `facet` now work with any distinct values, rather than only the integers 1 to k in order.
 * A treatment column stored as doubles no longer produces warnings.
 * The PENN data documentation now gives its correct number of rows.
 

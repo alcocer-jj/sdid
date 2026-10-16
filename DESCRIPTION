@@ -37,6 +37,8 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 Suggests:
     generics,
+    knitr,
+    rmarkdown,
     ggrepel,
     tibble,
     data.table,
@@ -46,3 +48,4 @@ Suggests:
     scales,
     CVXR
 Config/roxygen2/version: 8.0.0
+VignetteBuilder: knitr

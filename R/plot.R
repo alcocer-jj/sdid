@@ -549,13 +549,13 @@ add_range_frame <- function(p) {
 #' replaces the one this function sets, and with it the time-weight axis or the
 #' x padding. Adding facets or a coordinate system misplaces the time-weight
 #' axes of stacked panels. If a list of estimates is passed, plots each of them
-#' in stacked in its own panel. Plotting several estimates in one shared panel
+#' stacked in its own panel. Plotting several estimates in one shared panel
 #' is not supported.
 #'
-#' Requires ggplot2 3.5.0.
+#' Requires ggplot2.
 #'
 #' @param estimates The result of an sdid object or a list of sdid estimates.
-#'        For a staggered sdid result, each adoption period is plotted in its
+#'        For a staggered sdid result, each adoption period is plotted in
 #'        a stacked panel.
 #' @param treated.name A string conveying the name of the treated curve that
 #'        appears in the legend. Defaults to "treated".
