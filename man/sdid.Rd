@@ -28,61 +28,86 @@ sdid(
 }
 \arguments{
 \item{data}{A balanced panel in long format, with one row per unit and
-period.}
+period. A data frame, tibble or data.table.}
 
-\item{outcome, unit, time, treatment}{Names of the columns holding the outcome,
-the unit, the period and the treatment indicator, which is 1 for treated
-units from their first treated period onward and 0 otherwise.}
+\item{outcome, unit, time, treatment}{Names of the columns holding the
+outcome, the unit identifier, the period and the treatment
+indicator. The indicator is 1 for a treated unit from its first
+treated period onward and 0 otherwise. Units first treated in the
+same period form a cohort, and if not every treated unit is first
+treated in the same period, the design is staggered.}
 
-\item{vce}{The inference method, which must be given. "bootstrap" resamples
-units, and "placebo" assigns the treatment pattern to units never treated.
-Both use \code{reps} replications. "jackknife" leaves out one unit at a time
-with the weights held fixed. "noinference" skips inference. The bootstrap
-and jackknife need more than one treated unit, and for a staggered design
-the jackknife needs more than one in every cohort. The placebo needs more
-units never treated than treated.}
+\item{vce}{The method of inference, which must be given. "bootstrap"
+resamples units, and "placebo" gives units never treated the
+treatment pattern of the treated units, both over \code{reps}
+replications. "jackknife" leaves out one unit at a time with the
+weights held fixed. "noinference" skips inference. The bootstrap
+and the jackknife need more than one treated unit, and for a
+staggered design the jackknife needs more than one in every
+cohort. The placebo needs more units never treated than treated.}
 
 \item{covariates}{Optional names of numeric columns of time-varying
-covariates.}
+covariates to adjust for. Defaults to NULL, adjusting for none.}
 
-\item{method}{"sdid" (the default) for synthetic difference-in-differences,
-"sc" for synthetic control or "did" for difference-in-differences.}
+\item{method}{The estimator. "sdid" (the default) for synthetic
+difference-in-differences, "sc" for synthetic control or "did" for
+difference-in-differences.}
 
-\item{reps}{The number of bootstrap or placebo replications. Defaults to 50,
-as in Stata. More are advisable.}
+\item{reps}{The number of bootstrap or placebo replications. Defaults to
+50, as in the Stata command. More give a more precise standard
+error.}
 
-\item{seed}{An optional seed for the replications. It applies within this
-call only, and the random number state is restored afterward.}
+\item{seed}{An optional seed for the replications, so that results can be
+reproduced. It applies within this call only, and the state of the
+random number generator is restored afterward. Defaults to NULL.}
 
-\item{level}{The confidence level, in percent. Defaults to 95.}
+\item{level}{The confidence level of the intervals, in percent. Defaults
+to 95.}
 
 \item{alternative}{The alternative hypothesis of the test of the effect
-against zero. \code{"two.sided"} (the default) tests whether the effect differs
-from zero, \code{"greater"} whether it is positive and \code{"less"} whether it is
-negative. A one-sided test gives a one-sided p-value and a confidence
-interval open in the direction of its alternative, whose one bound is at
-\code{level}, so that \code{level = 95} corresponds to a one-sided test at 5\%. The
-direction of a one-sided test should be chosen before seeing the estimate.
-The estimate and its standard error are the same under every alternative.}
+against zero. "two.sided" (the default) tests whether the effect
+differs from zero, "greater" whether it is positive and "less"
+whether it is negative. A one-sided test gives one-sided p-values
+and intervals open in its direction, so that \code{level = 95}
+corresponds to a one-sided test at 5\%. Choose the direction before
+seeing the estimate. The estimate and its standard error are the
+same under every alternative.}
 
-\item{covariate.method, standardize, projection.sample}{How covariates are
-adjusted for. See synthdid_estimate.}
+\item{covariate.method}{How the covariates are adjusted for, ignored
+without covariates. "optimized" (the default) estimates their
+coefficients jointly with the weights. "projected" first regresses
+the outcome on the covariates and fixed effects, then estimates on
+the adjusted outcome, as Kranz (2022) proposes.}
 
-\item{num.threads}{The number of threads for replications. NULL, the default,
-uses the sdid.num.threads option or all available threads.}
+\item{standardize}{For the optimized method, TRUE (the default) to scale
+each covariate to mean zero and standard deviation one while
+solving, which keeps covariates on very different scales from
+stalling the solver. Coefficients are reported in the covariates'
+own units either way.}
 
-\item{graph}{TRUE (the default) to draw the trends plot of the estimate, as
-sdid_plot(fit) would.}
+\item{projection.sample}{For the projected method, the observations its
+regression uses. "controls" (the default) uses the units never
+treated in every period, as the Stata command does. "untreated"
+adds the treated units' periods before treatment, a larger sample
+that assumes the treatment had no effect before it began.}
 
-\item{quietly}{TRUE to print nothing, for example in loops. Defaults to
-FALSE, which prints, as Stata does, a header describing the data and the
-inference method before estimating, then the progress of any replications,
-then the results, whether or not the result is assigned. Progress is
-written to standard error, redrawn in place in an interactive session and
-one line per 10\% otherwise. It does not affect \code{graph}.}
+\item{num.threads}{The number of threads for the replications. Defaults
+to NULL, which uses the option \code{sdid.num.threads} if it is set and
+every available thread otherwise. Results do not depend on it.}
 
-\item{...}{Further arguments to the estimator, such as zeta.omega, max.iter
-or sparsify. See synthdid_estimate.}
+\item{graph}{TRUE (the default) to draw the trends plot of the estimate,
+as \code{sdid_plot(fit)} would.}
+
+\item{quietly}{TRUE to print nothing, for example within a loop. Defaults
+to FALSE, which prints, as the Stata command does, a header
+describing the data and the inference before estimating, the
+progress of any replications, then the results, whether or not the
+result is assigned. It does not affect \code{graph}.}
+
+\item{...}{Further settings of the estimator, such as \code{zeta.omega} and
+\code{zeta.lambda}, the regularization of the unit and time weights,
+\code{max.iter}, the most iterations of their solver, and \code{sparsify},
+which sets small unit weights to zero.}
 }
 \value{
 Invisibly, a list of class "sdid", which prints as the tables
@@ -151,7 +176,7 @@ covariates.}
 \description{
 Estimates the average effect of a treatment on the treated from a balanced
 panel in long format, with its standard error, in the manner of the Stata
-command \code{sdid} of Clarke, Pailañir, Athey and Imbens. The design is detected
+command \code{sdid} of Clarke et al. (2024). The design is detected
 from the treatment column. If every treated unit adopts treatment in the same
 period, the estimator is applied to the panel as a whole. If adoption is
 staggered, each adoption cohort, meaning the units that first adopt treatment

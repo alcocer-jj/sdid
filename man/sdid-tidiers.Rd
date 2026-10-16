@@ -18,22 +18,23 @@
 \method{glance}{sdid}(x, ...)
 }
 \arguments{
-\item{x}{The result of \code{\link[=sdid]{sdid()}}.}
+\item{x}{The result of \code{sdid()}.}
 
-\item{conf.int}{TRUE (the default) to include the bounds of a normal
+\item{conf.int}{TRUE (the default) to include the bounds of the
 confidence interval.}
 
-\item{conf.level}{The level of that interval, as a proportion. Defaults to
-the level of the fit. modelsummary sets it from its \code{conf_level} argument.}
+\item{conf.level}{The confidence level of the interval, as a proportion.
+Defaults to the level of the fit. modelsummary sets it from its
+\code{conf_level} argument.}
 
 \item{cohorts}{TRUE to add a row for each adoption period of a staggered
-design, after the overall effect. A design with a single adoption period
-gets no further row, since its one cohort is the overall effect.}
+design, after the overall effect. Defaults to FALSE. A design with
+a single adoption period gets no further rows.}
 
-\item{labels}{Optional names for all the rows, in order, the overall effect
-first and then, with \code{cohorts = TRUE}, each adoption period. By default the
-overall effect is named by the treatment column and each cohort by its
-adoption period.}
+\item{labels}{Optional names for all the rows, in order, the overall
+effect first and then, with \code{cohorts = TRUE}, each adoption period.
+By default the overall effect is named by the treatment column and
+each cohort by its adoption period.}
 
 \item{...}{Not used.}
 }

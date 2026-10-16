@@ -32,87 +32,88 @@ sdid_plot(
 )
 }
 \arguments{
-\item{lambda.plot.scale}{determines the scale of the plot of the weights
-lambda.}
-
-\item{effect.curvature, }{the curvature of the arrow indicating the treatment
-effect in the effects style. Defaults to .3. Nonzero values help avoid
-overplotting when plotting multiple estimates in one facet.}
-
-\item{line.width}{the line width.}
-
-\item{point.size}{determines the size of the points of the diff-in-diff
-diagram in the effects style}
-
-\item{onset.alpha}{the opacity of the red line marking the last pre-treatment
-period. Defaults to 0.8.}
-
-\item{spaghetti.line.width}{determines the width of spaghetti trajectories}
-
-\item{spaghetti.label.size}{determines the size of spaghetti labels}
-
-\item{spaghetti.line.alpha}{determines transparency of spaghetti trajectories}
-
-\item{spaghetti.label.alpha}{determines transparency of spaghetti trajectory
-labels}
-
-\item{alpha.multiplier, }{a vector of the same length as estimates, is useful
-for comparing multiple estimates in one facet but highlighting one or
-several. All plot elements associated with the estimate are displayed
-with alpha multiplied by the corresponding element of
-alpha.multiplier. Defaults to a vector of ones.}
-
-\item{style}{Either 'minimal' (the default) or 'effects'. See Details.}
-
-\item{lambda.axis}{TRUE to show the scale of the time weights on a right-hand
-axis when the plot has a single panel. Defaults to TRUE.}
-
-\item{x.breaks, y.breaks}{Optional ticks for the time and outcome axes, as
-numbers, or as dates for a time axis of dates. Each numeric axis then
-runs between its outermost given ticks, widened to the data if they
-fall short of it, with the frame, padding, cohort labels and the
-alignment of the time weights' band following them. A time axis of
-dates uses the given dates as ticks, keeping the range of the data.
-The band's baseline sits on the highest given outcome tick below it,
-if there is one. With stacked panels the outcome ticks apply to every
-panel. Prefer these to adding your own scale to the returned plot,
-which replaces the one it sets.}
-
-\item{estimates:}{The result of an sdid object or a list of sdid estimates.
-For a staggered sdid result, each adoption period is plotted in its
+\item{estimates}{The result of an sdid object or a list of sdid estimates.
+For a staggered sdid result, each adoption period is plotted in
 a stacked panel.}
 
-\item{treated.name:}{A string conveying the name of the treated curve that
+\item{treated.name}{A string conveying the name of the treated curve that
 appears in the legend. Defaults to "treated".}
 
-\item{control.name:}{A string conveying the name of the control curve that
+\item{control.name}{A string conveying the name of the control curve that
 appears in the legend. Defaults to 'synthetic control'.}
 
-\item{spaghetti.units:}{A list of units to plot individually alongside the
+\item{spaghetti.units}{A list of units to plot individually alongside the
 treatment and control curves. Defaults to the empty list.}
 
-\item{spaghetti.matrices:}{A list of matrices, one for each element of
+\item{spaghetti.matrices}{A list of matrices, one for each element of
 estimates, of trajectories to plot individually. The rows of these
 matrices should be the same length as the trajectories in Y and they
 must be named so trajectories can be labeled in the plot.}
 
-\item{lambda.comparable:}{Logical argument where if TRUE, the lambda
+\item{lambda.comparable}{Logical argument where if TRUE, the lambda
 weight axis is scaled to range from 0 to 1. Useful for when comparing
 across stacked panels. Defaults to FALSE.}
 
-\item{overlay:}{A number between [0,1] defaulting to 0, can be used to
-shift the control trajectory toward the treated trajectory. When a
-nonzero value is passed, we plot the control after subtracting that
-fraction of the diff-in-diff style adjustment for the difference
-between lambda-weighted pre-treatment averages of the treated and
-control. With intercept of almost one, this makes it easier to assess
-parallel-ness by making trajectories closer With intercept of one,
-this essentially overlays the curves, and plotting a diagram is
-suppressed as in the case of a SC estimate. To use different values
-for different plots, pass these values as an attribute 'overlay' of
-each estimate. If a vector is passed, plots at different intercept
-levels indicated by the 'frame' aesthetic. ggplotly will interpret
-this as an animation.}
+\item{overlay}{A number between 0 and 1 that shifts the synthetic control
+toward the treated trajectory by that fraction of the difference in
+their time-weighted pre-treatment averages. At 0, the default, both
+are drawn as estimated. Values near 1 bring them close, which makes
+it easier to judge whether they move in parallel, and at 1 they
+overlap and the effects diagram is left out, as for a synthetic
+control estimate. An estimate's own value can be set as its
+attribute "overlay". A vector draws the plot at each value, marked
+by the frame aesthetic, which plotly shows as an animation.}
+
+\item{lambda.plot.scale}{A number setting the height of the time weights'
+band, the range of the trajectories divided by this number.
+Defaults to 3.}
+
+\item{effect.curvature}{A number setting the curvature of the arrow that
+marks the effect in the effects style. Defaults to 0.3.}
+
+\item{line.width}{A number setting the width of the trajectory lines.
+Defaults to 0.5.}
+
+\item{point.size}{A number setting the size of the points in the effects
+style's diagram. Defaults to 1.}
+
+\item{onset.alpha}{A number between 0 and 1 setting the opacity of the red
+dashed line marking the start of treatment, drawn midway between
+the last period before treatment and the first treated period.
+Defaults to 0.8.}
+
+\item{spaghetti.line.width}{A number setting the width of the trajectories
+drawn by spaghetti.units and spaghetti.matrices. Defaults to 0.2.}
+
+\item{spaghetti.label.size}{A number setting the size of their labels.
+Defaults to 2.}
+
+\item{spaghetti.line.alpha}{A number between 0 and 1 setting the opacity
+of those trajectories. Defaults to 0.3.}
+
+\item{spaghetti.label.alpha}{A number between 0 and 1 setting the opacity
+of their labels. Defaults to 0.5.}
+
+\item{alpha.multiplier}{A vector with one number per estimate, multiplying
+the opacity of everything drawn for that estimate, to emphasize
+some estimates over others. Defaults to 1 for every estimate.}
+
+\item{style}{The plot's style, "minimal" (the default) or "effects". See
+Details.}
+
+\item{lambda.axis}{Logical argument where if TRUE, each panel with a time
+weights' band shows the band's scale on a right-hand axis. Defaults
+to TRUE.}
+
+\item{x.breaks, y.breaks}{Optional ticks for the time and outcome axes, as
+numbers, or as dates for a time axis of dates. A numeric axis runs
+between its outermost ticks, widened to cover the data if needed,
+and the frame, padding, cohort labels and time weights' band follow
+them. The band's baseline sits on the highest outcome tick below
+it, if there is one, and with stacked panels the outcome ticks
+apply to every panel. A time axis of dates uses the given dates as
+ticks and keeps the range of the data. Prefer these to adding a
+scale to the returned plot, which replaces the one it sets.}
 }
 \value{
 A ggplot object, which draws the plot when printed and can be
@@ -136,8 +137,8 @@ panel at that period. Adding your own x- or y-scale to the returned plot
 replaces the one this function sets, and with it the time-weight axis or the
 x padding. Adding facets or a coordinate system misplaces the time-weight
 axes of stacked panels. If a list of estimates is passed, plots each of them
-in stacked in its own panel. Plotting several estimates in one shared panel
+stacked in its own panel. Plotting several estimates in one shared panel
 is not supported.
 
-Requires ggplot2 3.5.0.
+Requires ggplot2.
 }

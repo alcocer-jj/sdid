@@ -7,21 +7,18 @@
 sdid_placebo(estimate, treated.fraction = NULL, placebo.time = "auto")
 }
 \arguments{
-\item{estimate, }{the result of sdid with a single adoption period, or an
-estimate output by synthdid_estimate}
+\item{estimate}{The result of \code{sdid()} with a single adoption period.}
 
-\item{treated.fraction, }{the fraction of pre-treatment data to use as a
-placebo treatment period. Defaults to NULL, which uses the fraction of
-all periods that are post-treatment. Used only when placebo.time is
-"auto".}
+\item{treated.fraction}{The share of the periods before treatment that
+the placebo treats, counted back from the last of them. Defaults to
+NULL, which uses the share of all periods that are treated. Give
+either this or \code{placebo.time}, not both.}
 
-\item{placebo.time, }{the period at which the placebo treatment begins, or
-"auto" (the default) to set it from treated.fraction. Give it as the
-period appears in the column names of the outcome matrix, for example
-1981, or a date for panels indexed by date. It must be a pre-treatment
-period with at least one earlier period, so that the placebo has both
-pre- and post-treatment periods. The red line in the placebo plot is
-drawn midway between it and the period before it.}
+\item{placebo.time}{The period at which the placebo treatment begins, as
+it appears in the time column, such as 1981, or a date for a panel
+indexed by dates. It must come before the real treatment, with at
+least one period before it. Defaults to "auto", which sets it from
+\code{treated.fraction}.}
 }
 \value{
 The placebo estimate, an object of the internal class

@@ -7,7 +7,7 @@
 \method{weights}{sdid}(object, ...)
 }
 \arguments{
-\item{object}{The result of sdid.}
+\item{object}{The result of \code{sdid()}.}
 
 \item{...}{Not used.}
 }

@@ -26,18 +26,18 @@
 \method{plot}{sdid}(x, ...)
 }
 \arguments{
-\item{x, object}{The result of \code{\link[=sdid]{sdid()}}.}
+\item{x, object}{The result of \code{sdid()}.}
 
-\item{digits}{The number of decimals printed for estimates, standard errors
-and confidence bounds.}
+\item{digits}{The number of decimals printed for estimates, standard
+errors and confidence bounds. Defaults to 5.}
 
-\item{...}{Passed to \code{\link[=sdid_plot]{sdid_plot()}} by \code{plot()}, and otherwise not used.}
+\item{...}{Passed to \code{sdid_plot()} by \code{plot()}, and otherwise not used.}
 
-\item{parm}{Not used, as the result has one parameter, named by the treatment
-column.}
+\item{parm}{Not used, as the result has a single parameter, the effect,
+named by the treatment column.}
 
-\item{level}{The confidence level, as a proportion. Defaults to the level of
-the fit.}
+\item{level}{The confidence level of the interval, as a proportion, such
+as 0.9. Defaults to the level of the fit.}
 }
 \value{
 \describe{

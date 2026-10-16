@@ -2,8 +2,8 @@
 % Please edit documentation in R/plot.R
 \name{sdid_placebo_plot}
 \alias{sdid_placebo_plot}
-\title{For our estimator and a placebo, plots treated and synthetic control
-trajectories and overlays a 2x2 diff-in-diff diagram. Requires ggplot2}
+\title{Takes an \code{sdid()} object and plots the treated and synthetic control
+trajectories along with a placebo plot stacked in a column. Requires ggplot2.}
 \usage{
 sdid_placebo_plot(
   estimate,
@@ -15,17 +15,19 @@ sdid_placebo_plot(
 )
 }
 \arguments{
-\item{estimate, }{the result of sdid with a single adoption period, or an
-estimate output by synthdid_estimate.}
+\item{estimate}{The result of \code{sdid()} with a single adoption period.}
 
-\item{treated.fraction}{as in sdid_placebo}
+\item{treated.fraction}{The share of the periods before treatment that
+the placebo treats, as in \code{sdid_placebo()}. Defaults to NULL.}
 
-\item{style}{Either "minimal" (the default) or "effects", as in sdid_plot}
+\item{style}{The plot's style, "minimal" (the default) or "effects", as
+in \code{sdid_plot()}.}
 
-\item{placebo.time}{as in sdid_placebo}
+\item{placebo.time}{The period at which the placebo treatment begins, as
+in \code{sdid_placebo()}. Defaults to "auto".}
 
-\item{x.breaks, y.breaks}{Optional ticks for the time and outcome axes, as in
-sdid_plot}
+\item{x.breaks, y.breaks}{Optional ticks for the time and outcome axes, as
+in \code{sdid_plot()}. The outcome ticks apply to both panels.}
 }
 \value{
 A ggplot object, which draws the plot when printed and can be
@@ -34,6 +36,6 @@ Scales, facets and coordinate systems added this way replace those the plot
 sets, as for \code{\link[=sdid_plot]{sdid_plot()}}.
 }
 \description{
-For our estimator and a placebo, plots treated and synthetic control
-trajectories and overlays a 2x2 diff-in-diff diagram. Requires ggplot2
+Takes an \code{sdid()} object and plots the treated and synthetic control
+trajectories along with a placebo plot stacked in a column. Requires ggplot2.
 }

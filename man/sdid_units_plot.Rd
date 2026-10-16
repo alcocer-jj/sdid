@@ -13,27 +13,29 @@ sdid_units_plot(
 )
 }
 \arguments{
-\item{estimates}{The result of sdid, or an estimate output by
-synthdid_estimate, or a list of such estimates, each drawn in its own
-panel. For a staggered sdid result, each cohort is drawn in its own
-panel unless \code{cohort} chooses one.}
+\item{estimates}{The result of \code{sdid()}, or a named list of results with
+a single adoption period each, drawn in panels labeled by their
+names. A staggered result is drawn with a panel for each cohort,
+unless \code{cohort} chooses one.}
 
-\item{type}{\code{"scatter"} (the default) or \code{"bars"}, as described above.}
+\item{type}{The kind of plot. "scatter" (the default) plots each
+control's weight against its own estimate. "bars" draws a bar from
+the effect to each weighted control's own estimate, ordered by
+weight. See Details.}
 
-\item{cohort}{For a staggered sdid result, the adoption period of the one
-cohort to plot, as it appears in the result's \code{cohorts}. Defaults to
-NULL, plotting every cohort in its own panel.}
+\item{cohort}{For a staggered result, the adoption period of the one
+cohort to plot, as it appears in the result's \code{cohorts}. Defaults
+to NULL, plotting every cohort in its own panel.}
 
-\item{label.units}{Which controls to name. \code{"all"} names every control,
-\code{"weighted"} those with positive weight, and a whole number n the n
-with the largest weights, among those with positive weight, with any
-tied at the cutoff included. Defaults to \code{"all"} for a single panel
-and 10 for several. The scatter still draws the controls it does not
-name, while the bars draw only the controls they name, every control
-with weight for \code{"all"} and \code{"weighted"}.}
+\item{label.units}{Which controls to name. "all" names every control,
+"weighted" those with positive weight, and a whole number n the n
+with the largest weights, with any tied at the cutoff included.
+Defaults to "all" for a single panel and 10 for several. The
+scatter still draws the controls it leaves unnamed, while the bars
+draw only the controls they name.}
 
-\item{weighted.only}{TRUE to draw only controls with positive weight in the
-scatter. Defaults to FALSE.}
+\item{weighted.only}{TRUE to leave controls with no weight out of the
+scatter. Defaults to FALSE, drawing them as open circles.}
 }
 \value{
 A ggplot object, which draws the plot when printed and can be
