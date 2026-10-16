@@ -92,7 +92,7 @@ fit1 <- sdid(
 
 It also draws the trends plot unless `graph = FALSE`.
 
-![](imgs/plot1.png)
+![](man/figures/plot1.png)
 
 
 ## Staggered adoption
@@ -136,7 +136,7 @@ fit2 <- sdid(
 #> 95% confidence intervals and p-values use the normal approximation.        
 ```
 
-![](imgs/plot2.png)
+![](man/figures/plot2.png)
 
 ## Covariates
 
@@ -282,7 +282,7 @@ sdid_units_plot(fit1, type = "bars") # unit weights with bars instead
 sdid_placebo_plot(fit1, placebo.time = 1981) # in-time placebo plot
 ```
 
-![](imgs/plot3.gif)
+![](man/figures/plot3.gif)
 
 
 ## Performance
