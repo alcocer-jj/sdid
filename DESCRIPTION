@@ -1,9 +1,9 @@
 Package: sdid
-Title: Synthetic Difference-in-Differences Estimation and Inference for R
+Title: Updated Synthetic Difference-in-Differences Estimation and Inference for R
 Version: 0.1.0
 Authors@R: c(
-    person("Jose J.", "Alcocer", email = "alcocer@protonmail.com", role = c("aut", "cre", "cph")),
-    person("Harry G.", "Muttram", email = "hmutt001@ucr.edu", role = "aut"),
+    person("Jose J.", "Alcocer", email = "alcocer@protonmail.com", role = c("aut", "cre", "cph"), comment = c(ORCID = "0009-0005-0469-3689")),
+    person("Harry G.", "Muttram", email = "hmutt001@ucr.edu", role = "aut", comment = c(ORCID = "0009-0001-4241-3204")),
     person("Dmitry", "Arkhangelsky", role = "ctb"),
     person("Susan", "Athey", role = "ctb"),
     person("David A.", "Hirshberg", role = "ctb"),

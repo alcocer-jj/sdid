@@ -3,7 +3,7 @@
 \docType{package}
 \name{sdid-package}
 \alias{sdid-package}
-\title{sdid: Synthetic Difference-in-Differences Estimation and Inference for R}
+\title{sdid: Updated Synthetic Difference-in-Differences Estimation and Inference for R}
 \description{
 Synthetic difference-in-differences (Arkhangelsky et al. 2021)
 for the average effect of a treatment on the treated in panel data, with
@@ -62,12 +62,12 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Jose J. Alcocer \email{alcocer@protonmail.com} [copyright holder]
+\strong{Maintainer}: Jose J. Alcocer \email{alcocer@protonmail.com} (\href{https://orcid.org/0009-0005-0469-3689}{ORCID}) [copyright holder]
 
 Authors:
 \itemize{
-  \item Jose J. Alcocer \email{alcocer@protonmail.com} [copyright holder]
-  \item Harry G. Muttram \email{hmutt001@ucr.edu}
+  \item Jose J. Alcocer \email{alcocer@protonmail.com} (\href{https://orcid.org/0009-0005-0469-3689}{ORCID}) [copyright holder]
+  \item Harry G. Muttram \email{hmutt001@ucr.edu} (\href{https://orcid.org/0009-0001-4241-3204}{ORCID})
 }
 
 Other contributors:

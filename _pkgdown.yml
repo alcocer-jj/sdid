@@ -1,7 +1,9 @@
 url: https://alcocer-jj.github.io/sdid/
-
-navbar:
-  type: default
+template:
+  bootstrap: 5
+  bootswatch: sandstone
+navbar: 
+  bg: dark
   left:
   - text: "Get started"
     href: articles/sdid.html

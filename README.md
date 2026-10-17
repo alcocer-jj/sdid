@@ -1,5 +1,9 @@
 # sdid: Updated Synthetic Difference-in-Differences Estimation and Inference for R
 
+[![registry status badge](https://alcocer-jj.r-universe.dev/badges/:registry)](https://alcocer-jj.r-universe.dev/)
+[![R-universe](https://img.shields.io/badge/dynamic/json?url=https://alcocer-jj.r-universe.dev/api/packages/sdid&query=$.Version&label=R-universe&color=blue)](https://alcocer-jj.r-universe.dev/sdid)
+[![sdid](https://img.shields.io/badge/License-BSD_3--Clause-orange)](https://alcocer-jj.r-universe.dev/sdid)
+
 `sdid` estimates average effects of a treatment on the treated (ATT) in panel data using synthetic difference-in-differences (SDiD), synthetic control (SC), or difference-in-differences (DiD). It follows the design of the Stata package [`sdid`](https://github.com/Daniel-Pailanir/sdid) by Clarke et al. (2024), where the function call accepts a long format panel dataset, automatically detects whether a staggered treatment approach is needed, and estimates the effect with bootstrap, jackknife, or placebo inference.
 
 The package derives from [`synthdid`](https://github.com/synth-inference/synthdid) 0.0.9 by Arkhangelsky et al., (2021). Relative to that package, it adds staggered adoption, optimized and projected methods of covariate adjustment, compiled estimation with parallel replications, and a redesigned interface built around a consolidated function.
@@ -269,7 +273,7 @@ modelsummary(
 
 ## Plots
 
-The plotting functions take the result of `sdid()`, drawing one panel per adoption cohort for a staggered design, each labeled at its adoption period and with its own time-weight axis. By default, as in Stata, each numeric axis has about five nice ticks covering the data and runs between its outermost ticks. `ticks = "loose.more"` adds ticks when that would leave more than 15% of an axis beyond the data, and `ticks = "minmax"` labels the smallest and largest values at the ends of each axis instead. To choose the ticks yourself, give them as `x.breaks` and `y.breaks`, which the frame and labels follow, rather than adding a scale to the plot.
+The plotting functions take the result of `sdid()`, drawing one panel per adoption cohort for a staggered design, each labeled at its adoption period and with its own time-weight axis. By default, as in Stata, each numeric axis has about five nice ticks covering the data and runs between its outermost ticks. To choose the ticks yourself, give them as `x.breaks` and `y.breaks`, which the frame and labels follow, rather than adding a scale to the plot.
 
 ```r
 sdid_plot(fit1) # trajectories and time weights
@@ -294,7 +298,9 @@ Weights are estimated in compiled code, and bootstrap, jackknife, and placebo re
 
 ## Acknowledgments 
 
-Development was assisted by [Claude Code](https://claude.com/product/claude-code), an AI coding assistant by Anthropic, for code refactoring, documentation updates, and package restructuring.
+We are grateful to Dmitry Arkhangelsky, Susan Athey, David A. Hirshberg, Guido W. Imbens and Stefan Wager, the authors of the [`synthdid`](https://github.com/synth-inference/synthdid) package for R, and to Damian Clarke, Daniel Pailañir, Susan Athey, Guido Imbens, Diego Ciccia, and Tommy Morgan, the authors and contributors of the [`sdid`](https://github.com/Daniel-Pailanir/sdid) package for Stata. Their work established the methods and software this package builds on, and by sharing their code openly on GitHub, they made it possible for others to extend and adapt it.
+
+Additionally, development of this package was assisted by [Claude Code](https://claude.com/product/claude-code), an AI coding assistant by Anthropic, for code refactoring, documentation updates, and package restructuring.
 
 ## References
 
