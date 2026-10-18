@@ -1,15 +1,14 @@
 #' Synthetic difference-in-differences estimation and inference
 #'
-#' Estimates the average effect of a treatment on the treated from a balanced
-#' panel in long format, with its standard error, in the manner of the Stata
-#' command `sdid` of Clarke et al. (2024). The design is detected
-#' from the treatment column. If every treated unit adopts treatment in the same
-#' period, the estimator is applied to the panel as a whole. If adoption is
-#' staggered, each adoption cohort, meaning the units that first adopt treatment
-#' in one period together with the units never treated, is estimated separately,
-#' and the overall effect averages the cohort effects with weights proportional
-#' to each cohort's number of treated units times its number of post-treatment
-#' periods.
+#' Estimates average effects on the treated (ATT) in panel data using synthetic
+#' difference-in-differences. As in the Stata package `sdid` (Clarke et al.
+#' 2024), it accepts a balanced panel in long format, detects whether a
+#' staggered treatment approach is needed, and estimates the effect with
+#' bootstrap, jackknife, or placebo inference. Under staggered adoption,
+#' `sdid()` estimates adoption-period effects, and the overall effect is a
+#' weighted average of these with weights proportional to each cohort's number
+#' of treated units times its number of post-treatment periods, following
+#' Algorithm 1 of Clarke et al. (2024).
 #'
 #' The result can be passed to the plot functions sdid_plot, sdid_units_plot and
 #' sdid_placebo_plot, and to sdid_placebo for an in-time placebo test. For a
@@ -37,8 +36,7 @@
 #'        difference-in-differences, "sc" for synthetic control or "did" for
 #'        difference-in-differences.
 #' @param reps The number of bootstrap or placebo replications. Defaults to
-#'        50, as in the Stata command. More give a more precise standard
-#'        error.
+#'        50. More give a more precise standard error.
 #' @param seed An optional seed for the replications, so that results can be
 #'        reproduced. It applies within this call only, and the state of the
 #'        random number generator is restored afterward. Defaults to NULL.
@@ -64,7 +62,7 @@
 #'        own units either way.
 #' @param projection.sample For the projected method, the observations its
 #'        regression uses. "controls" (the default) uses the units never
-#'        treated in every period, as the Stata command does. "untreated"
+#'        treated in every period. "untreated"
 #'        adds the treated units' periods before treatment, a larger sample
 #'        that assumes the treatment had no effect before it began.
 #' @param num.threads The number of threads for the replications. Defaults
@@ -72,76 +70,37 @@
 #'        every available thread otherwise. Results do not depend on it.
 #' @param graph TRUE (the default) to draw the trends plot of the estimate,
 #'        as `sdid_plot(fit)` would.
-#' @param quietly TRUE to print nothing, for example within a loop. Defaults
-#'        to FALSE, which prints, as the Stata command does, a header
-#'        describing the data and the inference before estimating, the
-#'        progress of any replications, then the results, whether or not the
-#'        result is assigned. It does not affect `graph`.
-#' @param ... Further settings of the estimator, such as `zeta.omega` and
-#'        `zeta.lambda`, the regularization of the unit and time weights,
-#'        `max.iter`, the most iterations of their solver, and `sparsify`,
-#'        which sets small unit weights to zero.
-#' @return Invisibly, a list of class "sdid", which prints as the tables
-#'   `sdid()` prints. Its methods, described in [sdid-methods], and
-#'   [weights.sdid()] are the stable way to extract results. Its components are
-#'   as follows.
+#' @param quietly TRUE to print nothing, for example in a loop. By default,
+#'        `sdid()` prints a header, a progress bar and the results table, even
+#'        when the result is assigned. Doesn't affect `graph`.
+#' @param ... Further estimator settings: `zeta.omega` and `zeta.lambda`
+#'        (regularization of the unit and time weights), `max.iter` (solver
+#'        iterations), and `sparsify` (sets small unit weights to zero).
+#' @return An object of class `"sdid"`, returned invisibly. Use the methods in
+#'   [sdid-methods] and [weights.sdid()] to extract results rather than
+#'   reading the list directly. The main components are:
 #'   \describe{
-#'     \item{`estimate`}{The estimated average treatment effect on the treated.
-#'       For a staggered design, the average of the cohorts' effects with the
-#'       weights in `cohorts`.}
-#'     \item{`se`}{Its standard error. It is `NA` without inference, and for the
-#'       jackknife when it is not defined, as when a cohort's unit weights rest
-#'       on a single control.}
-#'     \item{`z`}{The z statistic, `estimate / se`.}
-#'     \item{`p.value`}{The p-value of `z` under the standard normal
-#'       distribution, against `alternative`.}
-#'     \item{`conf.int`}{The lower and upper bounds of the normal confidence
-#'       interval at `level`. A one-sided test's interval is open in the
-#'       direction of its alternative, with an infinite bound.}
-#'     \item{`level`}{The confidence level, in percent.}
-#'     \item{`alternative`}{The alternative hypothesis, `"two.sided"`,
-#'       `"greater"` or `"less"`.}
-#'     \item{`vce`}{The inference method.}
-#'     \item{`reps`}{The number of bootstrap or placebo replications, or `NA`
-#'       for the jackknife and without inference.}
-#'     \item{`method`}{The estimator, `"sdid"`, `"sc"` or `"did"`.}
-#'     \item{`design`}{`"block"` when every treated unit adopts treatment in the
-#'       same period, and `"staggered"` otherwise.}
-#'     \item{`cohorts`}{A data frame with a row per adoption period. `period` is
-#'       the adoption period as it appears in the time column, `treated` its
-#'       number of treated units, `post` its number of periods from adoption on,
-#'       `weight` its share of the overall effect, proportional to `treated`
-#'       times `post`, `estimate` its effect, `se` its standard error, and `z`,
-#'       `p.value`, `conf.low` and `conf.high` its z statistic, p-value and
-#'       confidence interval, computed as the overall effect's. A block design
-#'       has one row, with a weight of 1. The bootstrap and placebo compute a
-#'       cohort's standard error over the replications in which it appears, and
-#'       the jackknife over all units left out, as the Stata command does.
-#'       Without inference the standard errors are `NA`.}
-#'     \item{`estimates`}{A list of the underlying estimate of each cohort,
-#'       named by adoption period, which the plot functions draw. Their
-#'       structure is internal and may change, so [weights.sdid()] is the way to
-#'       obtain the weights.}
-#'     \item{`beta`}{The coefficients on the covariates, in the covariates' own
-#'       units, named by covariate, or `NULL` without covariates. With the
-#'       optimized method and staggered adoption, each cohort has its own
-#'       coefficients, given as a matrix with a row per covariate and a column
-#'       per adoption period. With the projected method all cohorts share one
-#'       set of coefficients.}
-#'     \item{`setup`}{The panel as matrices, with units never treated first. `Y`
-#'       is the outcome and `W` the treatment indicator, each with a row per
-#'       unit and a column per period. `X`, present with covariates, is an array
-#'       with a third dimension per covariate. `N0` is the number of units never
-#'       treated and `T0` the number of periods before treatment, which is `NA`
-#'       for a staggered design. A staggered design adds `adoption`, each unit's
-#'       adoption period as a column of `Y`, `NA` for units never treated,
-#'       `cohorts`, the adoption periods as columns of `Y`, and `staggered`,
-#'       which is `TRUE`.}
-#'     \item{`variables`}{A list of the column names given as `outcome`, `unit`,
-#'       `time`, `treatment` and `covariates`.}
-#'     \item{`covariate.method`}{The covariate method used, or `NULL` without
-#'       covariates.}
-#'     \item{`call`}{The call.}
+#'     \item{`estimate`}{The ATT. In a staggered design, the weighted average of
+#'       the cohort effects.}
+#'     \item{`se`, `z`, `p.value`, `conf.int`}{Standard error, z statistic,
+#'       p-value and confidence interval. All are `NA` with
+#'       `vce = "noinference"`, and the jackknife SE is `NA` when a cohort's
+#'       weight rests on a single control. One-sided intervals have an infinite
+#'       bound.}
+#'     \item{`cohorts`}{A data frame with one row per adoption period: `period`,
+#'       `treated` (number of treated units), `post` (number of post-treatment
+#'       periods), `weight` (share of the overall effect), and the cohort's
+#'       `estimate`, `se`, `z`, `p.value`, `conf.low` and `conf.high`. A block
+#'       design has a single row.}
+#'     \item{`beta`}{Covariate coefficients, or `NULL` without covariates. With
+#'       the optimized method and staggered adoption, a matrix with one column
+#'       per cohort.}
+#'     \item{`level`, `alternative`, `vce`, `reps`, `method`, `design`,
+#'       `covariate.method`, `variables`, `call`}{The settings used for the
+#'       fit. `design` is `"block"` or `"staggered"`.}
+#'     \item{`setup`, `estimates`}{The panel as matrices and the per-cohort
+#'       estimates used by the plot functions. These are internal and may
+#'       change.}
 #'   }
 #' @references Damian Clarke, Daniel Pailañir, Susan Athey, and Guido Imbens.
 #'   "On Synthetic Difference-in-Differences and Related Estimation Methods in
@@ -208,8 +167,7 @@ sdid <- function(
   }
   alternative <- match.arg(alternative)
   if (!is.null(seed)) {
-    # The seed applies within this call only. The caller's random number state
-    # is restored afterward.
+    # Seed is local to this call; caller's RNG state is restored.
     had.seed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
     old.seed <- if (had.seed) {
       get(".Random.seed", envir = globalenv())
@@ -249,8 +207,7 @@ sdid <- function(
       vce
     ))
   }
-  # Requirements that inference would otherwise only detect after the header is
-  # printed are checked first.
+  # Check inference requirements before printing the header.
   if (vce == "placebo" && setup$N0 <= N1) {
     stop(sprintf(
       "The placebo needs more units never treated than treated units, and there are %d and %d.",
@@ -298,9 +255,7 @@ sdid <- function(
   } else {
     NA_integer_
   }
-  # The header is printed before estimating, so that a long analysis shows what
-  # it is doing from the start. A blank line separates it from the progress of
-  # the replications, when there are any.
+  # Header first so long runs show progress; blank line before replications.
   if (!isTRUE(quietly)) {
     header <- sdid_header(
       method,
@@ -350,8 +305,7 @@ sdid <- function(
       se = unname(inference$cohort.se),
       stringsAsFactors = FALSE
     )
-    # Coefficients named by covariate. With the optimized method each cohort has
-    # its own, collected in a matrix.
+    # Coefficients by covariate; a matrix by cohort under the optimized method.
     beta <- if (length(covariates) == 0) {
       NULL
     } else if (is.null(fit$beta)) {
@@ -425,8 +379,7 @@ sdid <- function(
 
   se <- inference$se
   overall <- sdid_inference(estimate, se, level / 100, alternative)
-  # Each cohort's z statistic, p-value and confidence interval, computed as the
-  # overall effect's.
+  # Per-cohort z, p-value and CI, as for the overall effect.
   cohort.inference <- sdid_inference(
     cohorts$estimate,
     cohorts$se,
@@ -464,8 +417,7 @@ sdid <- function(
     ),
     class = "sdid"
   )
-  # The results are printed here, rather than when the result is shown, so that
-  # they appear even when the result is assigned, as Stata's output does.
+  # Print here, not in print(), so output shows even when assigned (as Stata).
   if (!isTRUE(quietly)) {
     cat(paste0(sdid_results(out), "\n"), sep = "")
   }
@@ -475,11 +427,9 @@ sdid <- function(
   invisible(out)
 }
 
-# The estimates to plot for an sdid result, as a single estimate for a block
-# design or a list named by adoption period for a staggered one. A list of sdid
-# results with a single adoption period each gives a list of their estimates,
-# keeping the list's names, and estimates already in the list are kept as they
-# are. Other inputs are returned unchanged.
+# Estimates to plot: one for a block design, a list by adoption period if
+# staggered. A list of single-adoption results gives their estimates (names
+# kept); other inputs returned unchanged.
 plot_estimates <- function(x) {
   if (
     is.list(x) &&
@@ -513,8 +463,7 @@ plot_estimates <- function(x) {
   if (!inherits(x, "sdid")) {
     return(x)
   }
-  # A staggered design's estimates are marked as cohorts, which the plots label
-  # by their adoption periods.
+  # Mark staggered estimates as cohorts so plots label them by adoption period.
   if (length(x$estimates) == 1) {
     x$estimates[[1]]
   } else {
@@ -522,9 +471,8 @@ plot_estimates <- function(x) {
   }
 }
 
-# The estimate for an in-time placebo test of an sdid result. Neither the Stata
-# paper nor the Stata command defines an in-time placebo for staggered adoption,
-# so it is available only for a single adoption period.
+# In-time placebo estimate. Single adoption period only: neither the Stata
+# paper nor command defines one for staggered adoption.
 placebo_estimate <- function(x) {
   if (!inherits(x, "sdid")) {
     return(x)
@@ -548,8 +496,7 @@ sdid_title <- function(method) {
   )
 }
 
-# The lines describing the data and the inference method, printed before
-# estimating and when a result is printed.
+# Data and inference description, printed before estimating and by print().
 sdid_header <- function(method, variables, setup, covariate.method, vce, reps) {
   periods <- colnames(setup$Y)
   N1 <- nrow(setup$Y) - setup$N0
@@ -598,11 +545,8 @@ sdid_header <- function(method, variables, setup, covariate.method, vce, reps) {
 }
 
 
-# The z statistic, p-value and normal confidence interval of estimates with
-# their standard errors, at a level given as a proportion, against the
-# alternative hypothesis of the test of the effect against zero. A one-sided
-# test's interval is open in the direction of its alternative. Without a
-# standard error, every result is missing.
+# z, p-value and normal CI at `level` (a proportion) against the test's
+# alternative; one-sided CIs are open toward it. All NA without an SE.
 sdid_inference <- function(estimate, se, level, alternative) {
   z <- estimate / se
   p.value <- switch(
@@ -626,8 +570,7 @@ sdid_inference <- function(estimate, se, level, alternative) {
   list(z = z, p.value = p.value, conf.low = low, conf.high = high)
 }
 
-# The alternative hypothesis of a result. Results made before it was recorded
-# were tested two-sided.
+# Result's alternative hypothesis; older results default to two-sided.
 sdid_alternative <- function(x) {
   if (is.null(x$alternative)) {
     "two.sided"
@@ -636,13 +579,12 @@ sdid_alternative <- function(x) {
   }
 }
 
-# The heading of the p-value column, as the Stata command labels it.
+# P-value column heading, as Stata labels it.
 sdid_p_heading <- function(alternative) {
   switch(alternative, two.sided = "P>|z|", greater = "P>z", less = "P<z")
 }
 
-# The lines reporting the results, printed after estimating and when a result is
-# printed.
+# Results lines, printed after estimating and by print().
 sdid_results <- function(x, digits = 5) {
   fmt <- function(v) {
     ifelse(is.na(v), ".", formatC(v, format = "f", digits = digits))

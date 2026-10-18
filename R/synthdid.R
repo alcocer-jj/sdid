@@ -82,9 +82,9 @@ sparsify_function <- function(v) {
 #'
 #' The projected method, proposed by Kranz (2022), estimates beta by a
 #' regression of the outcome on the covariates with unit and time fixed effects,
-#' using only observations without treatment, and then applies the estimator to
-#' the adjusted outcome exactly as it would without covariates. By default the
-#' regression uses only the control units, as the Stata command does.
+#' and then applies the estimator to the adjusted outcome exactly as it would
+#' without covariates. By default the regression uses only the never-treated
+#' units.
 #' projection.sample = "untreated" also uses the treated units' pre-treatment
 #' periods, as Kranz proposes. That sample is larger, but it relies on the
 #' treated units' outcomes and covariates being unaffected by the treatment
@@ -168,18 +168,15 @@ synthdid_estimate <- function(
       ))
     }
   }
-  # The projected adjustment replaces the outcome before anything else uses it,
-  # so that defaults computed from Y, such as noise.level, are computed from the
-  # adjusted outcome.
+  # Adjust Y first so defaults like noise.level use the adjusted outcome.
   Y.original <- Y
   projected.beta <- NULL
   if (K > 0 && covariate.method == "projected") {
     projected.beta <- projected_beta(Y, X, N0, T0, projection.sample)
     Y <- Y - contract3(X, projected.beta)
   }
-  # For the optimized method, standardize is TRUE, FALSE, or the centers and
-  # scales computed when the estimate was first fit, which replications pass
-  # back in so that every replication uses the same standardization.
+  # Optimized: standardize is TRUE, FALSE, or the original fit's centers and
+  # scales, passed back by replications.
   scaling <- if (K > 0 && covariate.method == "optimized") {
     covariate_scaling(X, standardize)
   } else {
@@ -284,9 +281,7 @@ synthdid_estimate <- function(
         )
       ))
     }
-    # Coefficients on standardized covariates are converted to the covariates'
-    # own units. The centering adds a constant to Y - X beta, which the estimate
-    # does not depend on.
+    # Back to original units; centering only shifts Y - X beta by a constant.
     if (!is.null(scaling)) {
       weights$beta <- weights$beta / scaling$scale
     }
@@ -333,7 +328,7 @@ synthdid_estimate <- function(
   return(estimate)
 }
 
-# Names of the covariates in X, or their positions if X has none.
+# Covariate names, or positions if unnamed.
 covariate_names <- function(X) {
   names <- dimnames(X)[[3]]
   if (is.null(names)) {
@@ -343,9 +338,8 @@ covariate_names <- function(X) {
   }
 }
 
-# Centers and scales for standardizing covariates, or NULL for no
-# standardization. standardize is TRUE, to compute them from every cell of X,
-# FALSE, or a list of center and scale computed earlier.
+# Covariate centers and scales, or NULL. standardize is TRUE (use all of X),
+# FALSE, or an earlier center/scale list.
 covariate_scaling <- function(X, standardize) {
   if (isFALSE(standardize)) {
     return(NULL)
@@ -378,8 +372,8 @@ standardize_covariates <- function(X, scaling) {
   X
 }
 
-# Coefficients for the projected covariate adjustment of Kranz (2022). See
-# projected_beta in src/synthdid_core.h.
+# Projected covariate adjustment of Kranz (2022); see projected_beta in
+# src/synthdid_core.h.
 projected_beta <- function(Y, X, N0, T0, projection.sample) {
   storage.mode(Y) <- "double"
   fit <- .projected_beta_cpp(
@@ -471,16 +465,8 @@ did_estimate <- function(Y, N0, T0, ...) {
 #'        indexed by dates. It must come before the real treatment, with at
 #'        least one period before it. Defaults to "auto", which sets it from
 #'        `treated.fraction`.
-#' @return The placebo estimate, an object of the internal class
-#'   `sdid_estimate`. It is a 1 by 1 matrix holding the estimated placebo
-#'   effect, which `c()` turns into a number, with the attributes `weights`,
-#'   holding the unit weights `omega` and time weights `lambda`, `setup`, the
-#'   panel restricted to the periods before treatment, with the placebo starting
-#'   at `placebo.time`, and `opts`, the settings of the fit. Printing it shows,
-#'   on one line, the estimator, the estimate, the effective numbers of controls
-#'   and of periods before the placebo, and the numbers of treated units and of
-#'   periods after it. [sdid_placebo_plot()] draws it with the original
-#'   estimate.
+#' @return The placebo estimate. Use `c()` to get it as a number, print it for a
+#'   one-line summary, or plot it with [sdid_placebo_plot()].
 #' @export sdid_placebo
 sdid_placebo <- function(
   estimate,

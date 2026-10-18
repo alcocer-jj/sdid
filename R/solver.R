@@ -10,8 +10,7 @@ contract3 <- function(X, v) {
   return(out)
 }
 
-# Reads the solver options. Returns the mode code expected by the compiled
-# code (0 auto, 1 direct, 2 gram) and the Gram matrix memory cap in bytes.
+# Solver mode code (0 auto, 1 direct, 2 gram) and Gram memory cap in bytes.
 solver_config <- function() {
   mode <- getOption("sdid.solver", "auto")
   if (
@@ -36,11 +35,9 @@ solver_config <- function() {
   )
 }
 
-# Frank-Wolfe solver for synthetic control weights using exact line search.
-# The iterations run in compiled code, see src/synthdid_core.h. The gradient
-# method follows the sdid.solver and sdid.gram.max.mb options. The
-# returned gram.start is the iteration at which the solver switched to the
-# Gram method, or NA if it never did.
+# Frank-Wolfe with exact line search, in src/synthdid_core.h. Gradient method
+# set by sdid.solver / sdid.gram.max.mb; gram.start is when it switched to Gram
+# (NA if never).
 sc.weight.fw <- function(
   Y,
   zeta,
@@ -73,13 +70,9 @@ sc.weight.fw <- function(
   )
 }
 
-# A Frank-Wolfe plus gradient solver for lambda, omega, and beta when there are
-# covariates. Uses exact line search Frank-Wolfe steps for lambda and omega and
-# (1/t) gradient steps for beta. Pass update.lambda=FALSE or update.omega=FALSE
-# to fix those weights at their initial values, which default to uniform 1/T0
-# and 1/N0. The iterations run in compiled code, see src/synthdid_core.h. This
-# solver always uses the direct gradient, since the outcome matrix changes as
-# beta is updated.
+# Frank-Wolfe for lambda and omega plus (1/t) gradient steps for beta, with
+# covariates. update.lambda/omega = FALSE fixes weights (default uniform).
+# Always direct gradient, since Y changes with beta. See src/synthdid_core.h.
 sc.weight.fw.covariates <- function(
   Y,
   X = array(0, dim = c(dim(Y), 0)),

@@ -1,19 +1,11 @@
-# Staggered adoption, following Algorithm 1 of Clarke, Pailañir, Athey and
-# Imbens (2024). Each adoption cohort, meaning the units that first adopt
-# treatment in one period together with the never-treated units, is a block
-# design, and is estimated as one. The overall effect is the average of the
-# cohort effects weighted by each cohort's number of treated units times its
-# number of post-treatment periods, as in equation 8 of that paper and lines
-# 1136 and 1341 of the Stata sdid command, version 2.0.6.
+# Staggered adoption, Algorithm 1 of Clarke et al. (2024): each adoption cohort
+# plus the never-treated units is a block design. Overall effect weights cohorts
+# by treated units x post periods (eq. 8; Stata sdid v2.0.6 lines 1136, 1341).
 
-# Estimates every cohort of a staggered setup from panel.matrices(..., staggered
-# = TRUE). method chooses the estimator for each cohort. The covariate arguments
-# are those of synthdid_estimate and follow the Stata command. With the
-# optimized method each cohort estimates its own coefficients, from covariates
-# standardized once over the whole panel. With the projected method one
-# regression over the whole panel gives coefficients shared by every cohort,
-# using the never-treated units, or with projection.sample = 'untreated' every
-# cell without treatment. Other arguments go to the estimator of each cohort.
+# Estimates every cohort from panel.matrices(..., staggered = TRUE). Covariates
+# follow Stata: 'optimized' fits per-cohort beta on covariates standardized once
+# over the panel; 'projected' fits one shared regression on never-treated units,
+# or all untreated cells if projection.sample = 'untreated'.
 staggered_estimate <- function(
   setup,
   method = c("sdid", "sc", "did"),
@@ -73,9 +65,8 @@ staggered_estimate <- function(
     } else {
       est <- estimator(Y.fit[rows, , drop = FALSE], N0, T0, ...)
       if (K > 0) {
-        # The cohort was fit to the adjusted outcome. It keeps the original
-        # outcome and covariates with the shared coefficients, so that Y - X
-        # beta reproduces what was fit, as for a block design.
+        # Keep original Y and X with the shared beta so Y - X beta reproduces
+        # what was fit, as for a block design.
         cohort.setup <- attr(est, "setup")
         cohort.setup$Y <- Y[rows, , drop = FALSE]
         cohort.setup$X <- X[rows, , , drop = FALSE]
@@ -141,11 +132,8 @@ staggered_estimate <- function(
   )
 }
 
-# The projected regression for a staggered setup. The sample is the
-# never-treated units in every period, or with projection.sample = 'untreated'
-# every cell without treatment, which adds each cohort's pre-treatment periods.
-# These are the samples of the Stata command without and with its _not_yet
-# option.
+# Projected regression sample: never-treated units, or with
+# projection.sample = 'untreated' all untreated cells (Stata's _not_yet).
 staggered_projected_beta <- function(Y, X, setup, projection.sample) {
   in.sample <- if (projection.sample == "untreated") {
     setup$W == 0
@@ -165,27 +153,15 @@ staggered_projected_beta <- function(Y, X, setup, projection.sample) {
   as.numeric(fit$beta)
 }
 
-# The joint jackknife of Algorithm 3 of Clarke, Pailañir, Athey and Imbens
-# (2024). Each unit of the whole panel is left out in turn, every cohort is
-# re-estimated with its weights held fixed and its coefficients on any
-# covariates re-estimated, and the overall effect is recomputed with each
-# cohort's weight updated for the treated units that remain. It is not defined
-# if a cohort has a single treated unit. Returns the standard error of the
-# overall effect and of each cohort's effect, both computed over all units left
-# out, as the Stata command computes them (lines 1333 and 1336 of version
-# 2.0.6).
-#As in the Stata command, every cohort is refit for every unit left out,
-#including cohorts whose samples do not contain it. A cohort's sample loses the
-#unit only if the unit is never treated or belongs to that cohort. Otherwise its
-#refit uses its full sample, which without covariates reproduces its estimate
-#exactly. With the optimized method it re-solves the coefficients with the
-#weights fixed, which can differ from the original estimate because the joint
-#solver stops before it fully converges. So, except with the projected method,
-#each cohort is refit once on its full sample and once without each unit of its
-#sample, by the fixed-weights jackknife of a block design, which runs in
-#parallel in compiled code. The projected method's coefficients come from the
-#whole panel, so leaving out any unit can change them for every cohort, and each
-#unit is handled in turn.
+# Joint jackknife, Algorithm 3 of Clarke et al. (2024): drop each unit, refit
+# every cohort with weights fixed (beta re-estimated), reweight cohorts.
+# Undefined for a cohort with one treated unit. SEs over all units, as in Stata
+# v2.0.6 (lines 1333, 1336).
+# Like Stata, every cohort is refit for every dropped unit. Without covariates
+# an unaffected cohort reproduces its estimate, but optimized beta can differ
+# since the joint solver stops early, so (except projected) each cohort is refit
+# once in full plus the compiled block jackknife. Projected beta uses the whole
+# panel, so units are handled one at a time.
 staggered_jackknife_se <- function(
   object,
   num.threads = NULL,
@@ -214,14 +190,12 @@ staggered_jackknife_se <- function(
   cohorts <- object$cohorts
   A <- length(cohorts)
   tau <- vapply(cohorts, c, numeric(1))
-  # Estimate and number of treated units for each cohort without each unit, one
-  # row per unit left out.
+  # Per-cohort estimate and treated count, one row per dropped unit.
   without <- matrix(tau, N, A, byrow = TRUE)
   treated <- matrix(object$treated, N, A, byrow = TRUE)
   for (a in seq_len(A)) {
     omega <- attr(cohorts[[a]], "weights")$omega
-    # As for a block design, the fixed-weights jackknife is undefined when one
-    # control carries all the weight.
+  # Undefined when one control carries all the weight.
     if (sum(omega != 0) == 1) {
       return(list(
         se = NA_real_,
@@ -313,8 +287,7 @@ staggered_jackknife_se <- function(
   )
 }
 
-# The effect estimate with fixed weights, for a panel whose first N0 rows are
-# controls.
+# Fixed-weights estimate; first N0 rows are controls.
 fixed_weights_contrast <- function(Y, N0, omega, lambda) {
   N1 <- nrow(Y) - N0
   T0 <- length(lambda)
@@ -322,14 +295,10 @@ fixed_weights_contrast <- function(Y, N0, omega, lambda) {
   c(t(c(-omega, rep(1 / N1, N1))) %*% Y %*% c(-lambda, rep(1 / T1, T1)))
 }
 
-# Re-estimates a staggered design on replications of its panel. Column r of ind
-# lists the rows of the setup in replication r, and the same column of cohort
-# gives each row's cohort, as an index into the setup's cohorts, or 0 for a
-# control. Each cohort present is refit with its stored settings, starting from
-# its original unit weights for the controls the replication contains, and
-# covariate coefficients are re-estimated as for the original fit. Returns the
-# overall estimates and a matrix of cohort estimates, NA where a cohort is
-# absent.
+# Refits a staggered design on replicated panels. Column r of ind lists the rows
+# of replication r; cohort gives each row's cohort index (0 = control). Cohorts
+# start from their original unit weights. Returns overall estimates and a cohort
+# matrix, NA where a cohort is absent.
 staggered_resample <- function(
   object,
   ind,
@@ -427,9 +396,8 @@ staggered_resample <- function(
   list(estimates = out$estimates, cohort.estimates = out$cohort.estimates)
 }
 
-# The same replications in R, for estimates whose options cannot run in compiled
-# code. Each cohort of each replication calls synthdid_estimate with the
-# cohort's stored options.
+# R fallback for options compiled code can't run: calls synthdid_estimate per
+# cohort per replication.
 staggered_resample_sequential <- function(
   object,
   ind,
@@ -522,16 +490,15 @@ staggered_resample_sequential <- function(
   list(estimates = estimates, cohort.estimates = cohort.estimates)
 }
 
-# The cohort index of each row of a staggered setup, 0 for never-treated units.
+# Cohort index of each row, 0 for never-treated.
 staggered_codes <- function(setup) {
   code <- match(setup$adoption, setup$cohorts)
   code[is.na(code)] <- 0L
   as.integer(code)
 }
 
-# Summarizes replications as standard errors, of the overall effect and of each
-# cohort over the replications in which it appears, with the scaling the Stata
-# command uses.
+# SEs of the overall effect and of each cohort (over replications where it
+# appears), scaled as in Stata.
 staggered_se <- function(draws) {
   se <- function(x) {
     x <- x[!is.na(x)]
@@ -551,11 +518,9 @@ staggered_se <- function(draws) {
   )
 }
 
-# The bootstrap of Algorithm 2 of Clarke, Pailañir, Athey and Imbens (2024).
-# Units are resampled with replacement from the whole panel, draws without both
-# a never-treated and a treated unit are discarded and redrawn, and every cohort
-# present in a draw is re-estimated. A unit drawn more than once counts once for
-# each draw, including in its cohort's weight.
+# Bootstrap, Algorithm 2 of Clarke et al. (2024). Resample units; redraw if no
+# never-treated or no treated unit. Duplicates count once per draw, including in
+# cohort weights.
 staggered_bootstrap_se <- function(
   object,
   replications,
@@ -585,12 +550,9 @@ staggered_bootstrap_se <- function(
   ))
 }
 
-# The placebo of Algorithm 4 of Clarke, Pailañir, Athey and Imbens (2024). Only
-# the never-treated units are kept, and in each replication a random set of
-# them, as many as there are treated units, takes on the treated units' adoption
-# periods, one each, so that the placebo cohorts have the sizes of the real
-# ones. As in the Stata command, this needs more never-treated units than
-# treated units.
+# Placebo, Algorithm 4 of Clarke et al. (2024): random never-treated units take
+# the treated units' adoption periods, keeping cohort sizes. Like Stata, needs
+# more never-treated than treated units.
 staggered_placebo_se <- function(
   object,
   replications,

@@ -1,19 +1,12 @@
 #' @description Synthetic difference-in-differences (Arkhangelsky et al. 2021)
-#' for the average effect of a treatment on the treated in panel data, with
-#' synthetic control and difference-in-differences in the same framework, in the
-#' manner of the Stata command sdid of Clarke, Pailañir, Athey and Imbens
-#' (2024). Designs where treated units adopt treatment in the same period or in
-#' different periods are both supported, with bootstrap, jackknife and placebo
-#' inference, covariate adjustment by either of the Stata command's two methods,
-#' and estimation in compiled code with parallel replications.
+#' in R, following the Stata package sdid of Clarke, Pailañir, Athey and Imbens
+#' (2024). Start with [sdid()], then plot results with [sdid_plot()],
+#' [sdid_units_plot()] and [sdid_placebo_plot()]. See the README and the
+#' "Getting started" vignette for examples.
 #'
-#' Estimation goes through [sdid()], which takes a panel in long format and
-#' returns a result with a Stata-style table. The result can be passed to
-#' [sdid_plot()], [sdid_units_plot()], [sdid_placebo()] and
-#' [sdid_placebo_plot()].
-#'
-#' The package derives from synthdid 0.0.9 by Dmitry Arkhangelsky, Susan Athey,
-#' David A. Hirshberg, Guido W. Imbens and Stefan Wager.
+#' The package builds on synthdid 0.0.9, a prior R implementation of the method
+#' by Dmitry Arkhangelsky, Susan Athey, David A. Hirshberg, Guido W. Imbens and
+#' Stefan Wager.
 #'
 #' @details
 #' Package options
@@ -48,6 +41,6 @@
 #' @keywords internal
 #' @useDynLib sdid, .registration = TRUE
 #' @importFrom Rcpp evalCpp
-#' @importFrom stats coef confint glm nobs rbinom rpois sd var vcov weights
+#' @importFrom stats coef confint nobs rpois sd var vcov weights
 #' @importFrom utils modifyList
 "_PACKAGE"

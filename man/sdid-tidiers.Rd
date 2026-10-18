@@ -39,16 +39,13 @@ each cohort by its adoption period.}
 \item{...}{Not used.}
 }
 \value{
-\code{tidy()} returns a data frame with a row per estimate and the columns
-\code{term}, the row's name, \code{estimate}, \code{std.error}, \code{statistic}, the z
-statistic, \code{p.value}, its p-value under the standard normal distribution
-against the fit's \code{alternative}, and, with \code{conf.int = TRUE}, \code{conf.low}
-and \code{conf.high}, one of which is infinite for a one-sided alternative.
-Without inference the standard errors and everything computed from them are
-\code{NA}. \code{glance()} returns a data frame with one row and the columns \code{nobs},
-the number of observations, \code{n.units}, the number of units, \code{n.periods},
-the number of periods, and \code{covariates}, the names of the covariates
-separated by commas, or \code{NA} without covariates.
+\code{tidy()} returns a data frame with one row per estimate and columns
+\code{term}, \code{estimate}, \code{std.error}, \code{statistic} (z), \code{p.value}, and, if
+\code{conf.int = TRUE}, \code{conf.low} and \code{conf.high}. These are \code{NA} without
+inference.
+
+\code{glance()} returns one row with \code{nobs}, \code{n.units}, \code{n.periods} and
+\code{covariates} (comma-separated names, or \code{NA}).
 }
 \description{
 Summaries of the result of \code{\link[=sdid]{sdid()}} in the form the broom package defines,

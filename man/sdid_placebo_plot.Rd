@@ -2,8 +2,7 @@
 % Please edit documentation in R/plot.R
 \name{sdid_placebo_plot}
 \alias{sdid_placebo_plot}
-\title{Takes an \code{sdid()} object and plots the treated and synthetic control
-trajectories along with a placebo plot stacked in a column. Requires ggplot2.}
+\title{Plot an estimate with its in-time placebo}
 \usage{
 sdid_placebo_plot(
   estimate,
@@ -30,12 +29,9 @@ in \code{sdid_placebo()}. Defaults to "auto".}
 in \code{sdid_plot()}. The outcome ticks apply to both panels.}
 }
 \value{
-A ggplot object, which draws the plot when printed and can be
-extended with \code{+}, for example with labels, themes or further layers.
-Scales, facets and coordinate systems added this way replace those the plot
-sets, as for \code{\link[=sdid_plot]{sdid_plot()}}.
+A ggplot object, which can be extended with \code{+}.
 }
 \description{
-Takes an \code{sdid()} object and plots the treated and synthetic control
-trajectories along with a placebo plot stacked in a column. Requires ggplot2.
+Plots the treated and synthetic control trajectories of an \code{sdid()} result,
+with an in-time placebo stacked below. Requires ggplot2.
 }

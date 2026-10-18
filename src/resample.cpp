@@ -1,15 +1,7 @@
-// Threaded resampling for bootstrap, placebo and jackknife standard errors.
-//
-// The R side draws every resampled index set up front with R's RNG and passes
-// them in as columns of an integer matrix. Each column is then an independent
-// re-estimation, run here across a pool of std::thread workers. Because the
-// randomness is fixed before any thread starts, results are identical for any
-// thread count and identical to the sequential R implementation for a given
-// seed.
-//
-// Worker threads never touch the R API. The main thread only waits, watches
-// for a user interrupt, reports progress when asked, and converts results back
-// to R objects at the end.
+// Threaded bootstrap/placebo/jackknife. R draws all index sets up front, so
+// results are identical across thread counts and match the R path per seed.
+// Don't call R from worker threads. Interrupts, progress and copying results
+// back to R all happen on the main thread.
 
 #include "synthdid_core.h"
 
@@ -29,8 +21,7 @@ namespace {
 
 void interrupt_probe(void*) { R_CheckUserInterrupt(); }
 
-// True if the user has requested an interrupt. Safe to call from the main
-// thread only. R_ToplevelExec keeps the longjmp from unwinding C++ frames.
+// Main thread only. R_ToplevelExec stops the longjmp unwinding C++ frames.
 bool interrupt_pending() { return R_ToplevelExec(interrupt_probe, nullptr) == FALSE; }
 
 std::string format_seconds(double s) {
@@ -44,7 +35,7 @@ std::string format_seconds(double s) {
   return buf;
 }
 
-// One progress line, for example
+// e.g.
 //   Bootstrap  [===========>            ]  112/200  56%  1.2s elapsed  ~0.9s left  18 threads
 std::string progress_line(const std::string& label, std::size_t done,
                           std::size_t total, double elapsed, int threads,
@@ -68,8 +59,7 @@ std::string progress_line(const std::string& label, std::size_t done,
   }
 
   char head[160];
-  // The completed count is padded to the width of the total so the line keeps
-  // its layout as it redraws.
+  // Fixed-width count so redraws don't shift.
   const int count_width = static_cast<int>(std::to_string(total).size());
   std::snprintf(head, sizeof(head), "%s  [%s]  %*zu/%zu  %3d%%  %s elapsed", label.c_str(),
                 bar.c_str(), count_width, done, total, pct, format_seconds(elapsed).c_str());
@@ -79,10 +69,8 @@ std::string progress_line(const std::string& label, std::size_t done,
   return line;
 }
 
-// Reports replication progress on standard error. Used on the main thread
-// only. Style 0 redraws one line in place, at most every 200 ms. Style 1 is
-// for non-interactive sessions and prints a separate line at the start and at
-// each further 10% of replications completed.
+// Progress on stderr, main thread only. Style 0: redraw in place, <= every
+// 200 ms. Style 1 (non-interactive): a new line per 10%.
 class Progress {
  public:
   Progress(bool enabled, int style, const std::string& label, std::size_t total)
@@ -102,7 +90,6 @@ class Progress {
       draw_in_place(done, false);
       last_draw_ = now;
     } else {
-      // Print once for the furthest 10% step reached since the last line.
       const std::size_t step = total_ == 0 ? 10 : (done * 10) / total_;
       if (started_ && step < next_step_ && !force) return;
       print_line(done, false);
@@ -112,7 +99,6 @@ class Progress {
     last_done_ = done;
   }
 
-  // Closes the report with the final count, then ends the line.
   void finish(std::size_t done, bool interrupted) {
     if (!enabled_) return;
     if (style_ == 0) {
@@ -131,7 +117,7 @@ class Progress {
 
   void draw_in_place(std::size_t done, bool interrupted) {
     const std::string line = progress_line(label_, done, total_, elapsed(), threads_, interrupted);
-    // Pad with spaces so a shorter line fully overwrites a longer one.
+    // Pad to overwrite a longer previous line.
     const std::size_t pad = line.size() < last_len_ ? last_len_ - line.size() : 0;
     REprintf("\r%s%s", line.c_str(), std::string(pad, ' ').c_str());
     last_len_ = line.size();
@@ -155,13 +141,9 @@ class Progress {
   bool started_ = false;
 };
 
-// Runs body(r) for every replication r in [0, R) on a pool of up to num_threads
-// threads (all hardware threads if num_threads is 0). Workers pull replication
-// numbers from a shared counter until the work runs out or the main thread
-// cancels. An exception in a replication is recorded in errors[r] and does not
-// stop the others. The main thread reports progress and checks for interrupts,
-// and an interrupt cancels the remaining work, waits for replications in
-// progress, and throws. Returns the number of threads used.
+// Runs body(r) for r in [0, R) on num_threads threads (0 = all cores).
+// Exceptions go to errors[r]. Main thread polls interrupts: on one, cancel,
+// drain in-flight work, then throw. Returns threads used.
 int run_replications(std::size_t R, int num_threads, Progress& progress,
                      std::vector<std::string>& errors,
                      const std::function<void(std::size_t)>& body) {
@@ -217,7 +199,7 @@ int run_replications(std::size_t R, int num_threads, Progress& progress,
 
   bool interrupted = false;
   if (pool.empty()) {
-    // Could not start any thread, so do the work here with interrupt checks.
+    // No threads started; run inline.
     for (std::size_t r = 0; r < R; ++r) {
       if (interrupt_pending()) {
         interrupted = true;
@@ -256,8 +238,7 @@ int run_replications(std::size_t R, int num_threads, Progress& progress,
 
 }  // namespace
 
-// Formats one progress line, so the sequential R path reports in exactly the
-// same format as the compiled loop.
+// Lets the sequential R path print the same progress format.
 // [[Rcpp::export(name = ".progress_line_cpp")]]
 std::string progress_line_cpp(std::string label, double done, double total,
                               double elapsed, int threads, bool interrupted) {
@@ -265,22 +246,9 @@ std::string progress_line_cpp(std::string label, double done, double total,
                        elapsed, threads, interrupted);
 }
 
-// Re-estimates the treatment effect on each resampled panel.
-//
-// ind holds 1-based row indices into Y, one replication per column. The first
-// n0[r] entries of column r are that replication's control units. When omega
-// has length N0, replication r starts from sum_normalize(omega[controls]),
-// otherwise from uniform weights. When lambda has length T0 it is the starting
-// value for every replication, otherwise uniform weights are used. sparsify
-// selects between the default sparsify_function and none, and
-// max_iter_pre_sparsify sets the first-round iterations when it is on. When
-// projected is true, covariates are handled by the projected adjustment,
-// re-estimated on each replication's data from its controls (and, if
-// projection_untreated is true, its treated units' pre-treatment periods), and
-// the replication is then fit without covariates. Otherwise covariates go into
-// the joint covariate solver, as given, already standardized if requested. When
-// verbose is true, progress is reported on standard error under label, in the
-// style described for the Progress class.
+// Re-estimates the effect on each resampled panel. Each column of ind holds the
+// rows of Y used in one replication (1-based), with the controls first. See
+// resample_estimates() in R/vcov.R, which calls it.
 // [[Rcpp::export(name = ".synthdid_resample_cpp")]]
 Rcpp::List synthdid_resample_cpp(
     const arma::mat& Y, const arma::cube& X, int T0, const Rcpp::IntegerMatrix& ind,
@@ -304,7 +272,7 @@ Rcpp::List synthdid_resample_cpp(
     Rcpp::stop("lambda must have length T0 or 0");
   }
 
-  // Copy indices out of R memory and validate them on the main thread.
+  // Copy out of R memory before threads start.
   std::vector<arma::uvec> rows(R);
   std::vector<arma::uword> n0v(R);
   for (std::size_t r = 0; r < R; ++r) {
@@ -386,25 +354,10 @@ Rcpp::List synthdid_resample_cpp(
       Rcpp::Named("threads") = threads);
 }
 
-// Replications of a staggered design, for the bootstrap and placebo standard
-// errors of Algorithms 2 and 4 of Clarke, Pailañir, Athey and Imbens (2024).
-// Each column r of ind lists the rows of Y in replication r, and the same
-// column of cohort gives each row's cohort, as a 1-based index into
-// cohort_period, or 0 for a control. Every row given a cohort other than 0 must
-// still refer to a row of Y, and every control must refer to one of the first
-// nrow(omega) rows, the controls of the original fit, whose unit weights start
-// each cohort's solver. cohort_period gives each cohort's first treated period
-// as a 1-based column of Y. omega has a column per cohort, lambda is a list of
-// each cohort's time weights, and zeta_lambda2, zeta_omega2 and min_decrease
-// give each cohort's settings. Each replication estimates every cohort present,
-// starting from the original weights of the controls it contains, and averages
-// the cohort estimates with weights proportional to treated units times
-// post-treatment periods. If projected is true, covariates are handled by the
-// projected adjustment, re-estimated on each replication's whole panel from its
-// controls (and, if projection_untreated is true, every cell without
-// treatment), and the cohorts are then fit without covariates. Returns the
-// overall estimates, a matrix of cohort estimates with NA for cohorts absent
-// from a replication, and any errors.
+// Staggered bootstrap and placebo, Algorithms 2 and 4 of Clarke et al. (2024).
+// For each replication, cohort says which cohort each sampled row belongs to
+// (0 for never-treated). A cohort missing from a replication gets NA.
+// Called from staggered_resample() in R/staggered.R.
 // [[Rcpp::export(name = ".staggered_resample_cpp")]]
 Rcpp::List staggered_resample_cpp(
     const arma::mat& Y, const arma::cube& X, const Rcpp::IntegerMatrix& ind,
@@ -438,7 +391,7 @@ Rcpp::List staggered_resample_cpp(
     if (lambda_init[a].n_elem != T0[a]) Rcpp::stop("each cohort's time weights must have one entry per pre-treatment period");
   }
 
-  // Copy indices out of R memory and validate them on the main thread.
+  // Copy out of R memory before threads start.
   std::vector<arma::uvec> rows(R);
   std::vector<arma::uvec> codes(R);
   for (std::size_t r = 0; r < R; ++r) {

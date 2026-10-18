@@ -1,5 +1,4 @@
-// R entry points for the single-estimate weight solvers.
-// The numerical work lives in synthdid_core.h.
+// R entry points for the weight solvers; numerics in synthdid_core.h.
 
 #include "synthdid_core.h"
 
@@ -13,7 +12,7 @@ Rcpp::NumericVector as_r_vector(const arma::vec& v) {
   return Rcpp::NumericVector(v.begin(), v.end());
 }
 
-// Pads the objective trace with NA to max_iter entries, as the R solvers did.
+// NA-pad to max_iter, as the R solvers did.
 Rcpp::NumericVector padded_vals(const std::vector<double>& vals, int max_iter) {
   Rcpp::NumericVector out(max_iter, NA_REAL);
   const std::size_t n = std::min(vals.size(), static_cast<std::size_t>(out.size()));
@@ -23,9 +22,7 @@ Rcpp::NumericVector padded_vals(const std::vector<double>& vals, int max_iter) {
 
 }  // namespace
 
-// Frank-Wolfe solver for synthetic control weights with exact line search.
-// zeta2 is Re(zeta^2) as computed on the R side. solver_mode is 0 for auto,
-// 1 for direct and 2 for Gram, see SolverMode in synthdid_core.h.
+// zeta2 = Re(zeta^2). solver_mode: 0 auto, 1 direct, 2 Gram (see SolverMode).
 // [[Rcpp::export(name = ".sc_weight_fw_cpp")]]
 Rcpp::List sc_weight_fw_cpp(const arma::mat& Y, double zeta2, bool intercept,
                             const arma::vec& lambda, double min_decrease,
@@ -46,8 +43,7 @@ Rcpp::List sc_weight_fw_cpp(const arma::mat& Y, double zeta2, bool intercept,
       Rcpp::Named("gram.start") = gram_start < 0 ? NA_INTEGER : gram_start);
 }
 
-// Frank-Wolfe plus gradient solver for lambda, omega and beta with covariates.
-// zeta_lambda2 and zeta_omega2 are Re(zeta^2) as computed on the R side.
+// Covariate solver (lambda, omega, beta). zeta_*2 = Re(zeta^2).
 // [[Rcpp::export(name = ".sc_weight_fw_covariates_cpp")]]
 Rcpp::List sc_weight_fw_covariates_cpp(
     const arma::mat& Y, const arma::cube& X, double zeta_lambda2,
@@ -66,9 +62,7 @@ Rcpp::List sc_weight_fw_covariates_cpp(
                             Rcpp::Named("vals") = padded_vals(vals, max_iter));
 }
 
-// Coefficients for the projected covariate adjustment, with the reciprocal
-// condition number of the demeaned covariates' cross-product. See
-// projected_beta in synthdid_core.h.
+// Projected-adjustment beta and rcond; see projected_beta.
 // [[Rcpp::export(name = ".projected_beta_cpp")]]
 Rcpp::List projected_beta_cpp(const arma::mat& Y, const arma::cube& X, int N0, int T0, bool untreated) {
   double rcond = 0.0;
@@ -77,9 +71,7 @@ Rcpp::List projected_beta_cpp(const arma::mat& Y, const arma::cube& X, int N0, i
   return Rcpp::List::create(Rcpp::Named("beta") = as_r_vector(beta), Rcpp::Named("rcond") = rcond);
 }
 
-// The projected regression over an arbitrary sample of cells, marked by
-// nonzero entries of in_sample, for designs whose sample is not a block, such
-// as staggered adoption.
+// Same over arbitrary cells (in_sample != 0), e.g. staggered adoption.
 // [[Rcpp::export(name = ".projected_beta_masked_cpp")]]
 Rcpp::List projected_beta_masked_cpp(const arma::mat& Y, const arma::cube& X, const arma::imat& in_sample) {
   double rcond = 0.0;

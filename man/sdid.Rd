@@ -54,8 +54,7 @@ difference-in-differences, "sc" for synthetic control or "did" for
 difference-in-differences.}
 
 \item{reps}{The number of bootstrap or placebo replications. Defaults to
-50, as in the Stata command. More give a more precise standard
-error.}
+50. More give a more precise standard error.}
 
 \item{seed}{An optional seed for the replications, so that results can be
 reproduced. It applies within this call only, and the state of the
@@ -87,7 +86,7 @@ own units either way.}
 
 \item{projection.sample}{For the projected method, the observations its
 regression uses. "controls" (the default) uses the units never
-treated in every period, as the Stata command does. "untreated"
+treated in every period. "untreated"
 adds the treated units' periods before treatment, a larger sample
 that assumes the treatment had no effect before it began.}
 
@@ -98,92 +97,52 @@ every available thread otherwise. Results do not depend on it.}
 \item{graph}{TRUE (the default) to draw the trends plot of the estimate,
 as \code{sdid_plot(fit)} would.}
 
-\item{quietly}{TRUE to print nothing, for example within a loop. Defaults
-to FALSE, which prints, as the Stata command does, a header
-describing the data and the inference before estimating, the
-progress of any replications, then the results, whether or not the
-result is assigned. It does not affect \code{graph}.}
+\item{quietly}{TRUE to print nothing, for example in a loop. By default,
+\code{sdid()} prints a header, a progress bar and the results table, even
+when the result is assigned. Doesn't affect \code{graph}.}
 
-\item{...}{Further settings of the estimator, such as \code{zeta.omega} and
-\code{zeta.lambda}, the regularization of the unit and time weights,
-\code{max.iter}, the most iterations of their solver, and \code{sparsify},
-which sets small unit weights to zero.}
+\item{...}{Further estimator settings: \code{zeta.omega} and \code{zeta.lambda}
+(regularization of the unit and time weights), \code{max.iter} (solver
+iterations), and \code{sparsify} (sets small unit weights to zero).}
 }
 \value{
-Invisibly, a list of class "sdid", which prints as the tables
-\code{sdid()} prints. Its methods, described in \link{sdid-methods}, and
-\code{\link[=weights.sdid]{weights.sdid()}} are the stable way to extract results. Its components are
-as follows.
+An object of class \code{"sdid"}, returned invisibly. Use the methods in
+\link{sdid-methods} and \code{\link[=weights.sdid]{weights.sdid()}} to extract results rather than
+reading the list directly. The main components are:
 \describe{
-\item{\code{estimate}}{The estimated average treatment effect on the treated.
-For a staggered design, the average of the cohorts' effects with the
-weights in \code{cohorts}.}
-\item{\code{se}}{Its standard error. It is \code{NA} without inference, and for the
-jackknife when it is not defined, as when a cohort's unit weights rest
-on a single control.}
-\item{\code{z}}{The z statistic, \code{estimate / se}.}
-\item{\code{p.value}}{The p-value of \code{z} under the standard normal
-distribution, against \code{alternative}.}
-\item{\code{conf.int}}{The lower and upper bounds of the normal confidence
-interval at \code{level}. A one-sided test's interval is open in the
-direction of its alternative, with an infinite bound.}
-\item{\code{level}}{The confidence level, in percent.}
-\item{\code{alternative}}{The alternative hypothesis, \code{"two.sided"},
-\code{"greater"} or \code{"less"}.}
-\item{\code{vce}}{The inference method.}
-\item{\code{reps}}{The number of bootstrap or placebo replications, or \code{NA}
-for the jackknife and without inference.}
-\item{\code{method}}{The estimator, \code{"sdid"}, \code{"sc"} or \code{"did"}.}
-\item{\code{design}}{\code{"block"} when every treated unit adopts treatment in the
-same period, and \code{"staggered"} otherwise.}
-\item{\code{cohorts}}{A data frame with a row per adoption period. \code{period} is
-the adoption period as it appears in the time column, \code{treated} its
-number of treated units, \code{post} its number of periods from adoption on,
-\code{weight} its share of the overall effect, proportional to \code{treated}
-times \code{post}, \code{estimate} its effect, \code{se} its standard error, and \code{z},
-\code{p.value}, \code{conf.low} and \code{conf.high} its z statistic, p-value and
-confidence interval, computed as the overall effect's. A block design
-has one row, with a weight of 1. The bootstrap and placebo compute a
-cohort's standard error over the replications in which it appears, and
-the jackknife over all units left out, as the Stata command does.
-Without inference the standard errors are \code{NA}.}
-\item{\code{estimates}}{A list of the underlying estimate of each cohort,
-named by adoption period, which the plot functions draw. Their
-structure is internal and may change, so \code{\link[=weights.sdid]{weights.sdid()}} is the way to
-obtain the weights.}
-\item{\code{beta}}{The coefficients on the covariates, in the covariates' own
-units, named by covariate, or \code{NULL} without covariates. With the
-optimized method and staggered adoption, each cohort has its own
-coefficients, given as a matrix with a row per covariate and a column
-per adoption period. With the projected method all cohorts share one
-set of coefficients.}
-\item{\code{setup}}{The panel as matrices, with units never treated first. \code{Y}
-is the outcome and \code{W} the treatment indicator, each with a row per
-unit and a column per period. \code{X}, present with covariates, is an array
-with a third dimension per covariate. \code{N0} is the number of units never
-treated and \code{T0} the number of periods before treatment, which is \code{NA}
-for a staggered design. A staggered design adds \code{adoption}, each unit's
-adoption period as a column of \code{Y}, \code{NA} for units never treated,
-\code{cohorts}, the adoption periods as columns of \code{Y}, and \code{staggered},
-which is \code{TRUE}.}
-\item{\code{variables}}{A list of the column names given as \code{outcome}, \code{unit},
-\code{time}, \code{treatment} and \code{covariates}.}
-\item{\code{covariate.method}}{The covariate method used, or \code{NULL} without
-covariates.}
-\item{\code{call}}{The call.}
+\item{\code{estimate}}{The ATT. In a staggered design, the weighted average of
+the cohort effects.}
+\item{\code{se}, \code{z}, \code{p.value}, \code{conf.int}}{Standard error, z statistic,
+p-value and confidence interval. All are \code{NA} with
+\code{vce = "noinference"}, and the jackknife SE is \code{NA} when a cohort's
+weight rests on a single control. One-sided intervals have an infinite
+bound.}
+\item{\code{cohorts}}{A data frame with one row per adoption period: \code{period},
+\code{treated} (number of treated units), \code{post} (number of post-treatment
+periods), \code{weight} (share of the overall effect), and the cohort's
+\code{estimate}, \code{se}, \code{z}, \code{p.value}, \code{conf.low} and \code{conf.high}. A block
+design has a single row.}
+\item{\code{beta}}{Covariate coefficients, or \code{NULL} without covariates. With
+the optimized method and staggered adoption, a matrix with one column
+per cohort.}
+\item{\code{level}, \code{alternative}, \code{vce}, \code{reps}, \code{method}, \code{design},
+\code{covariate.method}, \code{variables}, \code{call}}{The settings used for the
+fit. \code{design} is \code{"block"} or \code{"staggered"}.}
+\item{\code{setup}, \code{estimates}}{The panel as matrices and the per-cohort
+estimates used by the plot functions. These are internal and may
+change.}
 }
 }
 \description{
-Estimates the average effect of a treatment on the treated from a balanced
-panel in long format, with its standard error, in the manner of the Stata
-command \code{sdid} of Clarke et al. (2024). The design is detected
-from the treatment column. If every treated unit adopts treatment in the same
-period, the estimator is applied to the panel as a whole. If adoption is
-staggered, each adoption cohort, meaning the units that first adopt treatment
-in one period together with the units never treated, is estimated separately,
-and the overall effect averages the cohort effects with weights proportional
-to each cohort's number of treated units times its number of post-treatment
-periods.
+Estimates average effects on the treated (ATT) in panel data using synthetic
+difference-in-differences. As in the Stata package \code{sdid} (Clarke et al.
+2024), it accepts a balanced panel in long format, detects whether a
+staggered treatment approach is needed, and estimates the effect with
+bootstrap, jackknife, or placebo inference. Under staggered adoption,
+\code{sdid()} estimates adoption-period effects, and the overall effect is a
+weighted average of these with weights proportional to each cohort's number
+of treated units times its number of post-treatment periods, following
+Algorithm 1 of Clarke et al. (2024).
 }
 \details{
 The result can be passed to the plot functions sdid_plot, sdid_units_plot and

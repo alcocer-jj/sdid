@@ -136,9 +136,9 @@ Weights are not sparsified when covariates are adjusted for in this way.
 
 The projected method, proposed by Kranz (2022), estimates beta by a
 regression of the outcome on the covariates with unit and time fixed effects,
-using only observations without treatment, and then applies the estimator to
-the adjusted outcome exactly as it would without covariates. By default the
-regression uses only the control units, as the Stata command does.
+and then applies the estimator to the adjusted outcome exactly as it would
+without covariates. By default the regression uses only the never-treated
+units.
 projection.sample = "untreated" also uses the treated units' pre-treatment
 periods, as Kranz proposes. That sample is larger, but it relies on the
 treated units' outcomes and covariates being unaffected by the treatment

@@ -12,7 +12,7 @@
 #'   \item{State}{US state name, character string}
 #'   \item{Year}{Year, integer}
 #'   \item{PacksPerCapita}{per-capita cigarette consumption, numeric}
-#'   \item{treated}{the treatmed indicator 0: control, 1: treated, numeric}
+#'   \item{treated}{the treatment indicator 0: control, 1: treated, numeric}
 #' }
 #' @source Abadie, Alberto, Alexis Diamond, and Jens Hainmueller. "Synthetic
 #'  control methods for comparative case studies: Estimating the effect of

@@ -72,6 +72,7 @@ test_that("the covariate solver ignores the solver option", {
 test_that("estimates and standard errors agree across solver modes", {
   data(california_prop99)
   s = panel.matrices(california_prop99)
+  skip_if_not_installed("mvtnorm")
   set.seed(9); d = random.low.rank()
   for (p in list(s, d)) {
     est = function(mode) { withr::local_options(sdid.solver = mode); synthdid_estimate(p$Y, p$N0, p$T0) }
@@ -89,6 +90,7 @@ test_that("auto stays as accurate as direct when outcome levels dwarf the noise"
   # Large shared levels are where a naive Gram method loses precision. The
   # disagreement between modes should be no larger than the direct method's
   # own sensitivity to reordering the control units.
+  skip_if_not_installed("mvtnorm")
   set.seed(9); d = random.low.rank()
   set.seed(1); u = runif(nrow(d$Y), 1, 2)
   set.seed(2); perm = c(sample(d$N0), (d$N0 + 1):nrow(d$Y))

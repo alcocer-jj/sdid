@@ -1,4 +1,5 @@
 test_that("a simple workflow doesn't error", {
+  skip_if_not_installed("mvtnorm")
   setup = random.low.rank()
   tau.hat = synthdid_estimate(setup$Y,setup$N0,setup$T0)
   se = sqrt(vcov(tau.hat, replications = 10))
@@ -31,6 +32,7 @@ test_that("plotting doesn't error with (i) dates as colnames (ii) spaghetti unit
 })
 
 test_that("adjustment for covariates works: random noise less influential if passed as covariate", {
+  skip_if_not_installed("mvtnorm")
   setup = random.low.rank()
   X = setup$Y - setup$L
 
@@ -48,6 +50,7 @@ test_that("column/row/scaling invariances hold with default options", {
   # https://github.com/synth-inference/synthdid/issues/38
   estimators = list(sc_estimate, did_estimate, synthdid_estimate)
   CI.methods = c("jackknife", "bootstrap", "placebo")
+  skip_if_not_installed("mvtnorm")
   setup = random.low.rank()
   seed = sample(1:1e6, 1)
 
@@ -118,6 +121,7 @@ test_that("treated effect shifts correctly with scalar shifts to the 4 blocks", 
   # https://github.com/synth-inference/synthdid/issues/43
   estimators = list(sc_estimate, did_estimate, synthdid_estimate)
   seed = sample(1:1e6, 1)
+  skip_if_not_installed("mvtnorm")
   setup = random.low.rank()
   T0 = setup$T0
   N0 = setup$N0

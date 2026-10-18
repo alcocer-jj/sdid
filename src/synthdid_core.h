@@ -1,13 +1,8 @@
-// Core numerical routines for synthetic diff-in-diff.
-//
-// Nothing in this header touches the R API, so every function here is safe to
-// call from worker threads. Interrupt checks are injected by the caller through
-// an optional hook that is only ever set on the main R thread.
-//
-// The routines mirror the R functions fw.step, sc.weight.fw,
-// sc.weight.fw.covariates, collapsed.form, sparsify_function, sum_normalize and
-// the weight-estimation part of synthdid_estimate. They follow the R code step
-// for step so results agree with the legacy implementation up to rounding.
+// Weight solvers. These run on worker threads, so nothing here may call R.
+// Interrupt checks go through Hook, which only the main thread sets.
+// Ports fw.step, sc.weight.fw(.covariates), collapsed.form, sparsify_function,
+// sum_normalize and synthdid_estimate's weights step by step, so results match
+// the R code up to rounding.
 
 #ifndef SYNTHDID_CORE_H
 #define SYNTHDID_CORE_H
@@ -21,10 +16,10 @@
 
 namespace synthdid {
 
-// Called every few hundred iterations when non-null. Main thread only.
+// Periodic callback (interrupt check). Main thread only.
 typedef void (*Hook)();
 
-// First index of the minimum, skipping NaN, matching R's which.min.
+// R's which.min: first minimum, NaN skipped.
 inline arma::uword first_argmin(const arma::vec& v) {
   arma::uword best = 0;
   double best_val = std::numeric_limits<double>::infinity();
@@ -40,10 +35,8 @@ inline arma::uword first_argmin(const arma::vec& v) {
   return best;
 }
 
-// One exact line search Frank-Wolfe step for
-//   ||A x - b||^2 + eta ||x||^2   with x in the unit simplex.
-// On entry Ax must equal A * x. Both x and Ax are updated in place, which
-// saves recomputing A * x from scratch on every iteration.
+// One exact-line-search FW step on ||Ax - b||^2 + eta ||x||^2, x in simplex.
+// Requires Ax == A * x on entry; updates both in place.
 inline void fw_step(const arma::mat& A, const arma::vec& b, double eta,
                     arma::vec& x, arma::vec& Ax) {
   const arma::vec half_grad = A.t() * (Ax - b) + eta * x;
@@ -57,8 +50,7 @@ inline void fw_step(const arma::mat& A, const arma::vec& b, double eta,
   const double num = -arma::dot(half_grad, d_x);
   const double den = arma::dot(d_err, d_err) + eta * arma::dot(d_x, d_x);
 
-  // In R, num / 0 gives +-Inf which clamps to 1 or 0, and 0 / 0 gives NaN
-  // which would poison the weights. Here 0 / 0 is treated as no move.
+  // Matches R's clamp of +-Inf; 0/0 (NaN in R) means no move.
   double step;
   if (den > 0.0) {
     step = num / den;
@@ -74,13 +66,9 @@ inline void fw_step(const arma::mat& A, const arma::vec& b, double eta,
 
 inline void center_columns(arma::mat& M) { M.each_row() -= arma::mean(M, 0); }
 
-// Which gradient computation sc_weight_fw uses.
-//   Direct  recomputes A' (A x - b) every iteration, O(n p) per step. This is
-//           the original algorithm and reproduces the legacy R results.
-//   Gram    uses the precomputed Gram matrix G = A' A and tracks the gradient
-//           with O(n + p) updates per step.
-//   Auto    starts with Direct and switches to Gram once the solve has run
-//           p iterations without converging, provided G fits in memory.
+// How the solver gets its gradient. Direct recomputes it every step, as the
+// original R code did. Gram precomputes A'A once, which makes each step much
+// cheaper on long solves. Auto starts direct and switches if the matrix fits.
 enum SolverMode { SOLVER_AUTO = 0, SOLVER_DIRECT = 1, SOLVER_GRAM = 2 };
 
 struct SolverConfig {
@@ -89,12 +77,9 @@ struct SolverConfig {
   SolverConfig() : mode(SOLVER_AUTO), gram_max_bytes(64.0 * 1024.0 * 1024.0) {}
 };
 
-// One exact line search Frank-Wolfe step using the Gram matrix G = A' A.
-// On entry Ax = A x, Gx = G x and g = A' (A x - b). All are updated in place.
-// Since a step moves x toward a single vertex e_i, the needed products follow
-// from column i of G, so no O(n p) product is formed. If Ax_orig is non-null
-// it is advanced by the same residual change, letting the caller track the
-// residual in another coordinate system.
+// Same step as fw_step, but using the precomputed A'A, so it never multiplies
+// by the full matrix. Ax, Gx and the gradient g must be current on entry and
+// are updated in place.
 inline void fw_step_gram(const arma::mat& A, const arma::mat& G, double eta,
                          arma::vec& x, arma::vec& Ax, arma::vec& Gx,
                          arma::vec& g, arma::vec* Ax_orig = nullptr) {
@@ -118,7 +103,7 @@ inline void fw_step_gram(const arma::mat& A, const arma::mat& G, double eta,
   step = std::min(1.0, std::max(0.0, step));
   if (step == 0.0) return;
 
-  // A' d_err = G e_i - G x, which updates both G x and the gradient.
+  // A' d_err = G e_i - G x.
   const arma::vec dG = G.col(i) - Gx;
   g += step * dG;
   Gx += step * dG;
@@ -127,17 +112,10 @@ inline void fw_step_gram(const arma::mat& A, const arma::mat& G, double eta,
   if (Ax_orig) *Ax_orig += step * d_err;
 }
 
-// Port of sc.weight.fw. The last column of Y is the target, the rest are the
-// regressors. zeta2 is Re(zeta^2). If vals is non-null it receives the
-// objective after each iteration. If gram_start is non-null it receives the
-// iteration count at which the solver switched to the Gram method, or -1.
-//
-// The objective used for the stopping rule is always computed from A x - b in
-// the original coordinates, exactly as in the direct method, never by
-// expanding the square through G. A change of representation at the switch
-// would otherwise shift the computed objective by rounding error, which at
-// large outcome levels can exceed the stopping tolerance and end the solve
-// early.
+// C++ version of sc.weight.fw from synthdid. The last column of Y is the target.
+// The stopping rule always uses the objective computed from Ax - b, not from
+// A'A: with large outcome values, rounding at the switch to A'A can be bigger
+// than the tolerance and stop the solver too early.
 inline arma::vec sc_weight_fw(const arma::mat& Y, double zeta2, bool intercept,
                               arma::vec lambda, double min_decrease,
                               int max_iter, const SolverConfig& cfg,
@@ -153,15 +131,12 @@ inline arma::vec sc_weight_fw(const arma::mat& Y, double zeta2, bool intercept,
   const double eta = static_cast<double>(N0) * zeta2;
   const double tol = min_decrease * min_decrease;
 
-  // Decide whether the Gram method may be used and when to switch to it.
-  // Building G costs about as much as p direct iterations, so in auto mode
-  // the switch happens only once a solve has already run that long.
+  // Building G costs ~p direct iterations, so auto only switches after p.
   const arma::uword p = A.n_cols;
   const double gram_bytes = static_cast<double>(p) * static_cast<double>(p) * 8.0;
   const bool gram_allowed = cfg.mode != SOLVER_DIRECT && gram_bytes <= cfg.gram_max_bytes;
   const int switch_at = (cfg.mode == SOLVER_GRAM) ? 0 : static_cast<int>(p);
-  // The tracked G x and gradient are recomputed exactly this often to keep
-  // rounding drift bounded. Amortized, this adds O(n) work per iteration.
+  // Periodic exact recompute of Gx and g bounds drift; amortized O(n).
   const int refresh_every = std::max<int>(static_cast<int>(p), 16);
 
   if (gram_start) *gram_start = -1;
@@ -176,11 +151,9 @@ inline arma::vec sc_weight_fw(const arma::mat& Y, double zeta2, bool intercept,
   int t = 0;
   while (t < max_iter && (t < 2 || prev - curr > tol)) {
     if (!gram && gram_allowed && t >= switch_at) {
-      // Because the weights sum to one, subtracting a common vector v from
-      // every column of A and from b leaves A x - b unchanged and shifts every
-      // gradient entry by the same constant, so the iterates are unaffected.
-      // Taking v to be the row means removes levels shared across columns,
-      // which would otherwise dominate G and cost precision.
+      // Weights sum to one, so shifting A's columns and b by v leaves Ax - b and
+      // the iterates unchanged. Row means strip shared levels that would
+      // otherwise dominate G and cost precision.
       const arma::vec v = arma::mean(A, 1);
       As = A.each_col() - v;
       bs = b - v;
@@ -213,7 +186,7 @@ inline arma::vec sc_weight_fw(const arma::mat& Y, double zeta2, bool intercept,
   return lambda;
 }
 
-// State shared by the covariate solver, mirroring update.weights in R.
+// Mirrors update.weights in R.
 struct WeightState {
   arma::vec lambda;
   arma::vec omega;
@@ -231,7 +204,7 @@ inline WeightState update_weights(const arma::mat& Y, const arma::vec& lambda,
   const arma::uword T0 = Y.n_cols - 1;
   WeightState s;
 
-  // Time weights from the control rows.
+  // lambda: control rows.
   arma::mat Y_lambda = Y.rows(0, N0 - 1);
   if (lambda_intercept) center_columns(Y_lambda);
   const arma::mat A_l = Y_lambda.cols(0, T0 - 1);
@@ -243,7 +216,7 @@ inline WeightState update_weights(const arma::mat& Y, const arma::vec& lambda,
   }
   s.err_lambda = Ax_l - b_l;
 
-  // Unit weights from the pre-treatment columns.
+  // omega: pre-treatment columns.
   arma::mat Y_omega = Y.cols(0, T0 - 1).t();
   if (omega_intercept) center_columns(Y_omega);
   const arma::mat A_o = Y_omega.cols(0, N0 - 1);
@@ -274,8 +247,7 @@ struct CovariateResult {
   arma::vec beta;
 };
 
-// Port of sc.weight.fw.covariates. Y is (N0 + 1) x (T0 + 1) in collapsed form
-// and X holds one collapsed slice per covariate.
+// Port of sc.weight.fw.covariates. Y and each X slice in collapsed form.
 inline CovariateResult sc_weight_fw_covariates(
     const arma::mat& Y, const arma::cube& X, double zeta_lambda2,
     double zeta_omega2, bool lambda_intercept, bool omega_intercept,
@@ -315,9 +287,7 @@ inline CovariateResult sc_weight_fw_covariates(
                        update_lambda, update_omega);
     prev = curr;
     curr = w.val;
-    // The gradient steps on beta take no account of the covariates' scale, so
-    // badly scaled covariates can make them diverge. Stop rather than return
-    // meaningless weights.
+    // Beta steps ignore covariate scale and can diverge; fail loudly.
     if (!std::isfinite(curr) || !beta.is_finite()) {
       throw std::runtime_error(
           "The covariate solver diverged: the coefficients on the covariates became non-finite. "
@@ -333,15 +303,9 @@ inline CovariateResult sc_weight_fw_covariates(
   return out;
 }
 
-// Coefficients on the covariates for the projected covariate adjustment of
-// Kranz (2022), from a regression of the outcome on the covariates with unit
-// and time fixed effects, over the cells marked in in_sample. The fixed effects are removed by
-// alternating projections, demeaning by unit and by period until the change is
-// negligible, which is exact for the balanced control-only sample after one
-// pass. If rcond is non-null it receives the reciprocal condition number of the
-// covariates' cross-product after the fixed effects are removed, so that a
-// caller can detect covariates that are collinear with the fixed effects. A
-// singular system is solved with a pseudo-inverse.
+// Projected adjustment (Kranz 2022): two-way FE regression of Y on X over the
+// in_sample cells. FE removed by alternating demeaning (one pass if balanced).
+// rcond flags covariates collinear with the FE; singular -> pinv.
 inline arma::vec projected_beta_masked(const arma::mat& Y, const arma::cube& X,
                                        const arma::umat& in_sample,
                                        double* rcond = nullptr) {
@@ -352,7 +316,6 @@ inline arma::vec projected_beta_masked(const arma::mat& Y, const arma::cube& X,
   arma::rowvec col_count = arma::conv_to<arma::rowvec>::from(arma::sum(in_sample, 0));
   const arma::mat mask = arma::conv_to<arma::mat>::from(in_sample);
 
-  // Removes unit and period effects from M over the cells in the sample.
   auto demean = [&](arma::mat M) {
     M %= mask;
     const double scale = std::max(1.0, arma::abs(M).max());
@@ -379,10 +342,8 @@ inline arma::vec projected_beta_masked(const arma::mat& Y, const arma::cube& X,
     raw_ss[k] = arma::dot(raw, raw);
     Z.col(k) = demean(X.slice(k));
   }
-  // Work with the correlation-scaled cross-product, so that the collinearity
-  // measure and the solve do not depend on the covariates' units. A covariate
-  // with no variation left after removing the fixed effects, such as one that
-  // is constant within units, is collinear with them.
+  // Correlation-scale so rcond and solve are unit-free. No variation left
+  // after demeaning means collinear with the FE.
   const arma::mat ZZ = Z.t() * Z;
   const arma::vec Zy = Z.t() * y;
   arma::vec d = ZZ.diag();
@@ -400,9 +361,7 @@ inline arma::vec projected_beta_masked(const arma::mat& Y, const arma::cube& X,
   return scaled_beta / root;
 }
 
-// The projected regression for a block design. The sample is the control units
-// in every period and, if untreated is true, also the treated units'
-// pre-treatment periods, meaning every cell without treatment.
+// Block design: controls, plus treated pre-periods if untreated.
 inline arma::vec projected_beta(const arma::mat& Y, const arma::cube& X,
                                 arma::uword N0, arma::uword T0, bool untreated,
                                 double* rcond = nullptr) {
@@ -413,8 +372,7 @@ inline arma::vec projected_beta(const arma::mat& Y, const arma::cube& X,
   return projected_beta_masked(Y, X, in_sample, rcond);
 }
 
-// Port of collapsed.form. Averages the treated rows and post-treatment columns
-// into a single row and column, giving an (N0 + 1) x (T0 + 1) matrix.
+// Port of collapsed.form: (N0 + 1) x (T0 + 1).
 inline arma::mat collapsed_form(const arma::mat& Y, arma::uword N0,
                                 arma::uword T0) {
   const arma::uword N = Y.n_rows, T = Y.n_cols;
@@ -434,7 +392,7 @@ inline arma::vec sparsify(arma::vec v) {
   return v / arma::accu(v);
 }
 
-// Port of sum_normalize. Returns uniform weights for a vector summing to zero.
+// Port of sum_normalize; uniform if sum is zero.
 inline arma::vec sum_normalize(const arma::vec& x) {
   const double s = arma::accu(x);
   if (s != 0.0) return x / s;
@@ -443,7 +401,7 @@ inline arma::vec sum_normalize(const arma::vec& x) {
   return u;
 }
 
-// Tuning options carried in attr(estimate, 'opts').
+// Mirrors attr(estimate, 'opts').
 struct Options {
   double zeta_lambda2;
   double zeta_omega2;
@@ -456,12 +414,8 @@ struct Options {
   SolverConfig solver;        // only affects the no-covariate path
 };
 
-// The weight estimation and point estimate of synthdid_estimate. Used for
-// resampling replications. When o.sparsify is true this applies the default
-// sparsify_function between two rounds, as synthdid_estimate does. When it is
-// false it runs a single round of up to o.max_iter iterations, as
-// synthdid_estimate does with sparsify = NULL. Custom sparsify functions are
-// R code and are handled on the R side.
+// synthdid_estimate's weights and point estimate, for resampling. Default
+// sparsify between two rounds, or one round if off; custom sparsify stays in R.
 inline double estimate(const arma::mat& Y, const arma::cube& X, arma::uword N0,
                        arma::uword T0, const Options& o, arma::vec lambda,
                        arma::vec omega, bool update_lambda, bool update_omega) {

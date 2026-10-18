@@ -19,13 +19,9 @@ simplex.least.squares <- function(A, b, zeta = 0, intercept = FALSE) {
   weights
 }
 
-# Solves a CVXR problem and returns the value of the variable x.
-# CVXR 1.9 and later (the S7 rewrite) solve with psolve(), read results with
-# value(), and choose an installed solver themselves, since ECOS is no longer a
-# hard dependency. Earlier releases exported a solve() generic that returned a
-# result object with a getValue() accessor, and shipped ECOS, which upstream
-# synthdid used. Both interfaces are supported so the reference tests run on
-# whichever CVXR is installed.
+# Solves a CVXR problem, returning x. CVXR >= 1.9 uses psolve()/value() and
+# picks its own solver (ECOS optional); older releases use solve()/getValue()
+# and ECOS. Both are supported so reference tests run on either.
 cvxr.solve <- function(problem, x) {
   exports <- getNamespaceExports("CVXR")
   if ("psolve" %in% exports && "value" %in% exports) {
@@ -37,8 +33,7 @@ cvxr.solve <- function(problem, x) {
 }
 
 
-# Noise level used by the reference solvers. Matches the default noise.level in
-# synthdid_estimate.
+# Matches the default noise.level in synthdid_estimate.
 reference.noise.level <- function(Y, N0, T0) {
   sd(apply(Y[1:N0, 1:T0], 1, diff))
 }

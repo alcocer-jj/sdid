@@ -14,7 +14,7 @@
 #' on the covariates, by the estimate's covariate method. This includes the
 #' jackknife, which holds the weights fixed.
 #'
-#' Replications run in parallel in compiled code. All resampled index sets are
+#' Replications run in parallel in C++. All resampled index sets are
 #' drawn with R's random number generator before any thread starts, so results
 #' under a given `set.seed()` are identical for every value of `num.threads`.
 #'
@@ -68,14 +68,10 @@ synthdid_se <- function(...) {
 }
 
 
-# Re-estimates the effect on resampled panels.
-# Column r of ind holds the rows of Y used in replication r, controls first,
-# and n0[r] says how many of them are controls. Weights in `weights` are
-# starting values, or fixed values when the corresponding update flag is FALSE.
-# A NULL weight vector means start from uniform weights. Replications run in
-# compiled, threaded code, except when the estimate uses a custom sparsify
-# function, which is R code and therefore runs sequentially in R. When verbose
-# is TRUE, progress is reported on standard error under label.
+# Re-estimates on resampled panels. Column r of ind holds the rows (controls
+# first), n0[r] the control count. weights are starting values, or fixed if not
+# updated; NULL means uniform. Runs threaded in C++ unless sparsify is a custom
+# R function, then sequentially in R.
 resample_estimates <- function(
   estimate,
   ind,
@@ -115,11 +111,8 @@ resample_estimates <- function(
     dim(X) <- c(dim(X), 1)
   }
   storage.mode(X) <- "double"
-  # The projected method re-estimates its coefficients in each replication
-  # from the original covariates. The optimized method uses the covariates
-  # standardized with the centers and scales computed for the original fit.
-  # Estimates created before these options existed have neither recorded, and
-  # keep their earlier behavior.
+  # Projected re-estimates beta from the original covariates; optimized reuses
+  # the original fit's standardization. Older estimates record neither.
   projected <- dim(X)[3] > 0 && identical(opts$covariate.method, "projected")
   if (dim(X)[3] > 0 && !projected && is.list(opts$standardize)) {
     X <- standardize_covariates(X, opts$standardize)
@@ -164,11 +157,8 @@ resample_estimates <- function(
   out$estimates
 }
 
-# Reads the sparsify settings recorded in an estimate's options. mode is
-# 'default' for the package's sparsify_function, 'none' for sparsify = NULL,
-# and 'custom' for any other function. Estimates created before these settings
-# were recorded lack both fields and get the defaults, which is what their
-# replications always used.
+# Sparsify mode: 'default', 'none' (sparsify = NULL) or 'custom'. Older
+# estimates lack these fields and get the defaults they always used.
 sparsify_settings <- function(opts) {
   fn <- if ("sparsify" %in% names(opts)) {
     opts$sparsify
@@ -190,9 +180,8 @@ sparsify_settings <- function(opts) {
   list(mode = mode, max.iter.pre.sparsify = pre)
 }
 
-# Sequential replications in R, for estimates whose options cannot be run in
-# compiled code. Each replication calls synthdid_estimate with the estimate's
-# full options, so it re-runs exactly the fitted estimator.
+# R fallback for options compiled code can't run: each replication calls
+# synthdid_estimate with the full options.
 resample_sequential <- function(
   estimate,
   ind,
@@ -222,7 +211,7 @@ resample_sequential <- function(
   )
   done <- 0
   finished <- FALSE
-  # Closes the progress line even if the user interrupts.
+  # Close the progress line even on interrupt.
   on.exit(progress$finish(done, interrupted = !finished))
   out <- vapply(
     seq_len(ncol(ind)),
@@ -232,8 +221,7 @@ resample_sequential <- function(
       if (!is.null(weights$omega)) {
         w$omega <- sum_normalize(weights$omega[rows[seq_len(n0[r])]])
       }
-      # A replication that reaches max.iter is not reported, as the original fit
-      # already warned about the solver.
+      # Don't report max.iter here; the original fit already warned.
       est <- withCallingHandlers(
         c(do.call(
           synthdid_estimate,
@@ -262,16 +250,12 @@ resample_sequential <- function(
   out
 }
 
-# Chooses how progress is drawn. 0 redraws one line in place, for interactive
-# sessions. 1 prints separate lines, which keeps logs of non-interactive runs
-# readable.
+# 0 redraws one line (interactive); 1 prints lines (readable logs).
 progress_style <- function() {
   if (interactive()) 0L else 1L
 }
 
-# Progress reporting for the sequential R path. It follows the same rules as
-# the Progress class in src/resample.cpp and uses its line format, so both
-# paths report identically. Output goes to standard error.
+# R-path progress; mirrors Progress in src/resample.cpp. Writes to stderr.
 progress_reporter <- function(enabled, style, label, total) {
   start <- proc.time()[["elapsed"]]
   last.draw <- -Inf
@@ -335,8 +319,7 @@ progress_reporter <- function(enabled, style, label, total) {
   list(update = update, finish = finish)
 }
 
-# NULL or a non-positive value means all available hardware threads, signalled
-# as 0.
+# NULL or non-positive means all hardware threads (0).
 resolve_num_threads <- function(num.threads) {
   if (is.null(num.threads)) {
     return(0L)
@@ -369,9 +352,8 @@ bootstrap_sample <- function(
   if (N0 == N - 1) {
     return(NA)
   }
-  # Draw all resamples first. Draws with only controls or only treated units
-  # are discarded and redrawn, consuming the RNG exactly as the sequential
-  # version did.
+  # Draw all resamples up front, redrawing all-control/all-treated draws; RNG
+  # use matches the old sequential version.
   ind <- matrix(0L, N, replications)
   count <- 0
   while (count < replications) {
@@ -396,10 +378,8 @@ bootstrap_sample <- function(
 
 
 # The fixed-weights jackknife estimate of variance. Algorithm 3 of Arkhangelsky
-# et al. If weights = NULL is passed explicitly, calculates the usual jackknife
-# estimate of variance, re-estimating the weights from uniform starting values
-# in each replication. Returns NA if there is one treated unit or, for the
-# fixed-weights jackknife, one control with nonzero weight.
+# et al. weights = NULL gives the usual jackknife (weights re-estimated from
+# uniform). NA with one treated unit or, if fixed, one nonzero-weight control.
 jackknife_se <- function(
   estimate,
   weights = attr(estimate, "weights"),
@@ -466,8 +446,7 @@ placebo_se <- function(
   if (N0 <= N1) {
     stop("must have more controls than treated units to use the placebo se")
   }
-  # Each column is a permutation of the controls. The last N1 play the treated
-  # units.
+  # Columns permute the controls; the last N1 play treated.
   ind <- matrix(replicate(replications, sample(1:N0)), nrow = N0)
   est <- resample_estimates(
     estimate,

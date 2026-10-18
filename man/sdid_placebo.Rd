@@ -21,16 +21,8 @@ least one period before it. Defaults to "auto", which sets it from
 \code{treated.fraction}.}
 }
 \value{
-The placebo estimate, an object of the internal class
-\code{sdid_estimate}. It is a 1 by 1 matrix holding the estimated placebo
-effect, which \code{c()} turns into a number, with the attributes \code{weights},
-holding the unit weights \code{omega} and time weights \code{lambda}, \code{setup}, the
-panel restricted to the periods before treatment, with the placebo starting
-at \code{placebo.time}, and \code{opts}, the settings of the fit. Printing it shows,
-on one line, the estimator, the estimate, the effective numbers of controls
-and of periods before the placebo, and the numbers of treated units and of
-periods after it. \code{\link[=sdid_placebo_plot]{sdid_placebo_plot()}} draws it with the original
-estimate.
+The placebo estimate. Use \code{c()} to get it as a number, print it for a
+one-line summary, or plot it with \code{\link[=sdid_placebo_plot]{sdid_placebo_plot()}}.
 }
 \description{
 Computes a placebo variant of our estimator using pre-treatment data only

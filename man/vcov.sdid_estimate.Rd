@@ -50,7 +50,7 @@ For estimates with covariates, each replication re-estimates the coefficients
 on the covariates, by the estimate's covariate method. This includes the
 jackknife, which holds the weights fixed.
 
-Replications run in parallel in compiled code. All resampled index sets are
+Replications run in parallel in C++. All resampled index sets are
 drawn with R's random number generator before any thread starts, so results
 under a given \code{set.seed()} are identical for every value of \code{num.threads}.
 }

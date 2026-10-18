@@ -1,5 +1,4 @@
-# Column names used inside ggplot2::aes(). They are data frame columns, not
-# variables, but R CMD check cannot tell the difference.
+# ggplot2::aes() column names; declared to quiet R CMD check.
 utils::globalVariables(c(
   "color",
   "direction",
@@ -35,9 +34,7 @@ utils::globalVariables(c(
   "ymin"
 ))
 
-# Stops with an informative message if ggplot2 is not installed. Plotting
-# functions call ggplot2 through its namespace, so it is never attached to the
-# user's search path.
+# Stop if ggplot2 is missing. Called via namespace, never attached.
 require_ggplot2 <- function() {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop(
@@ -46,12 +43,8 @@ require_ggplot2 <- function() {
   }
 }
 
-# A layer drawing each panel's time-weight axis just outside its right edge,
-# for panels stacked in a column, where one secondary axis cannot describe
-# bands drawn on different scales. Each row gives a tick's position and label
-# in y, and the span of the axis line in ymin and ymax. The line, ticks,
-# labels and title are placed in absolute units from the panel's edge, as an
-# axis is, with ticks 0.25 cm long and labels 2.2 points beyond them.
+# Draws a separate time-weight axis to the right of each stacked panel. A single
+# secondary axis won't work because each panel's weights have their own scale.
 weight_axis_layer <- function(data) {
   geom <- ggplot2::ggproto(
     "GeomSdidWeightAxis",
@@ -112,13 +105,9 @@ weight_axis_layer <- function(data) {
   )
 }
 
-# A layer labeling each cohort's adoption period under its panel, where a time
-# axis's labels would be, with a tick on the panel that has the time axis.
-# That panel's label is moved, if it would overlap the time axis's labels in
-# `neighbors`, a data frame of their positions and labels, just far enough to
-# clear them, keeping its tick at the adoption period, or, if there is no room
-# between them, to a line below them. The overlap depends on the size the plot
-# is drawn at, so it is resolved when the label is drawn.
+# Cohort adoption-period label under its panel, ticked on the time-axis panel.
+# That label shifts just enough to clear the time-axis labels in `neighbors`,
+# or drops a line if no room. Resolved at draw time: overlap depends on size.
 cohort_label_layer <- function(data, neighbors = NULL) {
   geom <- ggplot2::ggproto(
     "GeomSdidCohortLabel",
@@ -157,9 +146,8 @@ cohort_label_layer <- function(data, neighbors = NULL) {
   )
 }
 
-# The label of a cohort's adoption period at `at`, a proportion of the panel's
-# width, with a tick if `tick` is TRUE, and the positions and labels of the
-# time axis's labels it must not overlap.
+# Adoption-period label at `at` (share of panel width), optional tick, and
+# the time-axis labels it must avoid.
 cohort_label_grob <- function(
   label,
   at,
@@ -198,13 +186,11 @@ makeContent.sdidcohortlabel <- function(x) {
     nzchar(x$neighbor.labels)
   neighbors <- x$neighbors[keep]
   neighbor.labels <- x$neighbor.labels[keep]
-  # A time axis label at the adoption period already gives it, so the cohort's
-  # label is not repeated.
+  # Already labeled by a time-axis tick; skip.
   if (any(abs(neighbors - x$at) < 1e-9)) {
     return(grid::setChildren(x, children))
   }
-  # Positions in points from the panel's left edge, and the room each pair of
-  # labels needs, half of each width and a gap of 5.5 points.
+  # Positions in pt from panel's left edge; pair spacing = half widths + 5.5 pt.
   panel <- grid::convertWidth(grid::unit(1, "npc"), "pt", valueOnly = TRUE)
   width <- function(s) {
     grid::convertWidth(
@@ -246,11 +232,10 @@ makeContent.sdidcohortlabel <- function(x) {
       neighbors[right] * panel - room[right]
     }
     if (lowest <= highest) {
-      # Room between the two neighbors, so move as little as clears both.
+      # Room between neighbors: move minimally.
       position <- min(max(position, lowest), highest)
     } else {
-      # No room between them, so the label goes on a line below theirs, under
-      # its tick.
+      # No room: drop to a line below, under the tick.
       y <- y - grid::unit(12, "pt")
     }
   }
@@ -267,11 +252,9 @@ makeContent.sdidcohortlabel <- function(x) {
   grid::setChildren(x, children)
 }
 
-# The frame of panels stacked in a column. Each panel gets an outcome axis line
-# as in add_range_frame, the bottom panel a time axis line, each panel with a
-# band its own weight axis, and, for a staggered design's cohorts, each panel a
-# label of its adoption period under it, the bottom panel's moved if needed to
-# clear the time axis's labels.
+# Frame for column-stacked panels: outcome axis lines (as add_range_frame),
+# time axis on bottom panel, per-panel weight axis, staggered cohort labels
+# (bottom one shifted to clear time-axis labels).
 add_stacked_frames <- function(p, ribbons, weights, vlines) {
   built <- ggplot2::ggplot_build(p)
   layout <- built$layout$layout
@@ -315,9 +298,8 @@ add_stacked_frames <- function(p, ribbons, weights, vlines) {
       colour = "black",
       linewidth = .4
     )
-  # Weight axes, with ticks chosen as for the single panel's axis, except that
-  # labels are kept at least 12% of the panel's height apart rather than 5%,
-  # since stacked panels are shorter than a single panel.
+  # As the single-panel axis, but labels >= 12% of panel height apart (not 5%):
+  # stacked panels are shorter.
   axes <- list()
   for (f in unique(weights$facet)) {
     band <- weights[weights$facet == f, ]
@@ -366,7 +348,7 @@ add_stacked_frames <- function(p, ribbons, weights, vlines) {
       label = as.character(labels$facet),
       tick = as.character(labels$facet) == bottom.facet
     )
-    # The time axis's labels, which the bottom panel's label is moved to clear.
+    # Time-axis labels the bottom cohort label must clear.
     x <- built$layout$panel_params[[bottom.row]]$x
     shown <- !is.na(x$breaks)
     p <- p +
@@ -381,18 +363,12 @@ add_stacked_frames <- function(p, ribbons, weights, vlines) {
   p
 }
 
-# The choice of ticks shared by the plot functions, loose ticks as the Stata
-# command chooses them. `padding` is the proportion each axis is padded by
-# beyond its ends. Returns choose.ticks(),
-# which chooses the ticks of a range, and axis.functions(), which gives an
-# axis's limits, breaks and labels functions, remembering each choice so
-# that they agree.
+# Shared tick logic: loose ticks as Stata picks them. `padding` = proportional
+# axis padding. Returns choose.ticks() and axis.functions() (limits, breaks,
+# labels; memoized so they agree).
 tick_machinery <- function(padding = .02) {
-  # The algorithm's steps are 1, 5, 2, 2.5, 4 and 3 times a power of ten.
-  # A time axis whose periods are whole numbers, such as years, leaves out
-  # 2.5, which would put ticks between periods, as at 2002.5, and if a short
-  # panel still gets a fractional tick, takes steps of whole numbers instead,
-  # so that every tick is a period.
+  # Steps: 1, 5, 2, 2.5, 4, 3 x 10^k. Whole-number (e.g. year) axes drop 2.5 to
+  # avoid ticks like 2002.5, and fall back to integer steps if still fractional.
   steps <- function(whole) {
     if (whole) {
       c(1, 5, 2, 4, 3)
@@ -412,8 +388,7 @@ tick_machinery <- function(padding = .02) {
     }
   }
   choose.ticks <- function(low, high, whole = FALSE, given = NULL) {
-    # Breaks given by the user are used as they are, the axis spanning them and
-    # the data.
+    # User breaks used as-is; axis spans them and the data.
     if (!is.null(given)) {
       return(list(at = sort(unique(given)), labels = NULL))
     }
@@ -430,15 +405,9 @@ tick_machinery <- function(padding = .02) {
     }
     list(at = at, labels = NULL)
   }
-  # Each axis's ticks are chosen once and remembered with the range they set,
-  # so that the range, the ticks and their labels always come from the same
-  # choice. ggplot2 asks for an axis's limits, breaks and labels separately,
-  # calls the breaks and labels functions with the range after padding, and
-  # in a later build sees the range frame's lines, which span the limits, as
-  # data. So each request is matched to a remembered choice by its range,
-  # allowing for rounding, and a new choice is made only for a range not
-  # seen before. Choices are kept by axis, so that the time and outcome axes
-  # never reuse each other's, even for the same range.
+  # Memoize tick choices by range: ggplot2 asks for limits, breaks, labels
+  # separately, passes padded ranges, and later sees range-frame lines as data.
+  # Match by range with rounding tolerance; keyed per axis (x, y never share).
   chosen <- new.env(parent = emptyenv())
   chosen$entries <- list()
   same.range <- function(a, b) {
@@ -459,8 +428,7 @@ tick_machinery <- function(padding = .02) {
     chosen$entries <- c(chosen$entries, list(choice))
     choice
   }
-  # The limits, breaks and labels functions of an axis, whole-number or not,
-  # with any breaks the user gave.
+  # Limits/breaks/labels functions for an axis, with any user breaks.
   axis.functions <- function(axis, whole, given) {
     choice <- function(range) {
       width <- diff(range) / (1 + 2 * padding)
@@ -489,11 +457,8 @@ tick_machinery <- function(padding = .02) {
   list(choose.ticks = choose.ticks, axis.functions = axis.functions)
 }
 
-# Draws the outcome and time axis lines of a single panel as a range frame.
-# Each line runs from the lowest to the highest of the plotted data and the
-# axis's breaks, so it covers the data even when the outermost breaks fall
-# inside it, and stops where the data or the outermost break ends rather than
-# at the edge of the panel. The weight axis on the right keeps its own line.
+# Single-panel range frame: each axis line spans min..max of data and breaks,
+# not the whole panel. Weight axis keeps its own line.
 add_range_frame <- function(p) {
   built <- ggplot2::ggplot_build(p)
   scales <- built$layout$panel_params[[1]]
@@ -530,27 +495,23 @@ add_range_frame <- function(p) {
 }
 
 
-#' Takes an `sdid()` object and plots the treated and synthetic control
-#' trajectories along with the lambda weights conveying which pre-treatment
-#' periods were most informative for predicting post-treatment outcomes among
-#' the controls.
+#' Plot treated and synthetic control trajectories
 #'
-#' Two plotting styles are available: "minimal" and "effects". Its default,
-#' `style = 'minimal'`, plots both trajectories in black, with the treatment
-#' line being solid and synthetic line dashed. The time weights are plotted as
-#' a gray band with their scale on a right-hand axis, while the last
-#' pre-treatment period is plotted a vertical red dashed line. The alternative,
-#' `style = 'effects'` adds a diff-in-diff diagram conveying the treatment
-#' effect while reducing the trajectory lines opacity.
+#' Plots the treated and synthetic control trajectories of an `sdid()` result,
+#' along with the time weights, which show which pre-treatment periods were
+#' most informative for predicting post-treatment outcomes among the controls.
 #'
-#' Feeding a staggered treatment `sdid()` object plots cohort panels stacked in
-#' a column and are identified by their adoption periods, labeled under each
-#' panel at that period. Adding your own x- or y-scale to the returned plot
-#' replaces the one this function sets, and with it the time-weight axis or the
-#' x padding. Adding facets or a coordinate system misplaces the time-weight
-#' axes of stacked panels. If a list of estimates is passed, plots each of them
-#' stacked in its own panel. Plotting several estimates in one shared panel
-#' is not supported.
+#' Two plotting styles are available: "minimal" and "effects". The default,
+#' `style = "minimal"`, plots both trajectories in black, with the treated line
+#' solid and the synthetic control dashed. The time weights are plotted as a
+#' gray band with their scale on a right-hand axis, and a red dashed line marks
+#' treatment. `style = "effects"` adds a diff-in-diff diagram of the treatment
+#' effect and fades the trajectory lines.
+#'
+#' A staggered `sdid()` result is drawn as one panel per cohort, stacked in a
+#' column and labeled by adoption period. A list of results is drawn the same
+#' way, one panel each. To change the axis ticks, use `x.breaks` and `y.breaks`
+#' rather than adding your own scale, which would drop the time-weight axis.
 #'
 #' Requires ggplot2.
 #'
@@ -563,64 +524,37 @@ add_range_frame <- function(p) {
 #'        appears in the legend. Defaults to 'synthetic control'.
 #' @param spaghetti.units A list of units to plot individually alongside the
 #'        treatment and control curves. Defaults to the empty list.
-#' @param spaghetti.matrices A list of matrices, one for each element of
-#'        estimates, of trajectories to plot individually. The rows of these
-#'        matrices should be the same length as the trajectories in Y and they
-#'        must be named so trajectories can be labeled in the plot.
+#' @param spaghetti.matrices A list of matrices, one per estimate, of extra
+#'        trajectories to plot. Each row is a trajectory, one column per
+#'        period, and row names are used as labels.
 #' @param lambda.comparable Logical argument where if TRUE, the lambda
 #'        weight axis is scaled to range from 0 to 1. Useful for when comparing
 #'        across stacked panels. Defaults to FALSE.
-#' @param overlay A number between 0 and 1 that shifts the synthetic control
-#'        toward the treated trajectory by that fraction of the difference in
-#'        their time-weighted pre-treatment averages. At 0, the default, both
-#'        are drawn as estimated. Values near 1 bring them close, which makes
-#'        it easier to judge whether they move in parallel, and at 1 they
-#'        overlap and the effects diagram is left out, as for a synthetic
-#'        control estimate. An estimate's own value can be set as its
-#'        attribute "overlay". A vector draws the plot at each value, marked
-#'        by the frame aesthetic, which plotly shows as an animation.
-#' @param lambda.plot.scale A number setting the height of the time weights'
-#'        band, the range of the trajectories divided by this number.
-#'        Defaults to 3.
-#' @param effect.curvature A number setting the curvature of the arrow that
-#'        marks the effect in the effects style. Defaults to 0.3.
-#' @param line.width A number setting the width of the trajectory lines.
-#'        Defaults to 0.5.
-#' @param point.size A number setting the size of the points in the effects
-#'        style's diagram. Defaults to 1.
-#' @param onset.alpha A number between 0 and 1 setting the opacity of the red
-#'        dashed line marking the start of treatment, drawn midway between
-#'        the last period before treatment and the first treated period.
-#'        Defaults to 0.8.
-#' @param spaghetti.line.width A number setting the width of the trajectories
-#'        drawn by spaghetti.units and spaghetti.matrices. Defaults to 0.2.
-#' @param spaghetti.label.size A number setting the size of their labels.
-#'        Defaults to 2.
-#' @param spaghetti.line.alpha A number between 0 and 1 setting the opacity
-#'        of those trajectories. Defaults to 0.3.
-#' @param spaghetti.label.alpha A number between 0 and 1 setting the opacity
-#'        of their labels. Defaults to 0.5.
-#' @param alpha.multiplier A vector with one number per estimate, multiplying
-#'        the opacity of everything drawn for that estimate, to emphasize
-#'        some estimates over others. Defaults to 1 for every estimate.
+#' @param overlay Between 0 and 1. Shifts the synthetic control toward the
+#'        treated line by this fraction of their pre-treatment gap, which makes
+#'        it easier to see whether they move in parallel. Defaults to 0 (no
+#'        shift). A vector of values can be animated with plotly.
+#' @param lambda.plot.scale Height of the time-weight band: the range of the
+#'        trajectories divided by this number. Defaults to 3.
+#' @param effect.curvature Curvature of the effect arrow in the effects style.
+#' @param line.width Width of the trajectory lines.
+#' @param point.size Size of the points in the effects style.
+#' @param onset.alpha Opacity of the red dashed line that marks treatment.
+#' @param spaghetti.line.width,spaghetti.label.size,spaghetti.line.alpha,spaghetti.label.alpha
+#'        Width, label size and opacity of the spaghetti trajectories and their
+#'        labels.
+#' @param alpha.multiplier One number per estimate that scales its opacity,
+#'        to emphasize some estimates over others.
 #' @param style The plot's style, "minimal" (the default) or "effects". See
 #'        Details.
-#' @param x.breaks,y.breaks Optional ticks for the time and outcome axes, as
-#'        numbers, or as dates for a time axis of dates. A numeric axis runs
-#'        between its outermost ticks, widened to cover the data if needed,
-#'        and the frame, padding, cohort labels and time weights' band follow
-#'        them. The band's baseline sits on the highest outcome tick below
-#'        it, if there is one, and with stacked panels the outcome ticks
-#'        apply to every panel. A time axis of dates uses the given dates as
-#'        ticks and keeps the range of the data. Prefer these to adding a
-#'        scale to the returned plot, which replaces the one it sets.
+#' @param x.breaks,y.breaks Optional tick positions for the time and outcome
+#'        axes (numbers, or dates for a date axis). The axes are extended to
+#'        the outermost ticks if needed. With stacked panels, `y.breaks`
+#'        applies to every panel.
 #' @param lambda.axis Logical argument where if TRUE, each panel with a time
 #'        weights' band shows the band's scale on a right-hand axis. Defaults
 #'        to TRUE.
-#' @return A ggplot object, which draws the plot when printed and can be
-#'   extended with `+`, for example with labels, themes or further layers.
-#'   Scales, facets and coordinate systems added this way replace those the plot
-#'   sets, as described above.
+#' @return A ggplot object, which can be extended with `+`.
 #' @export sdid_plot
 sdid_plot <- function(
   estimates,
@@ -711,9 +645,8 @@ sdid_plot <- function(
     omega.synth <- c(weights$omega, rep(0, N1))
     omega.target <- c(rep(0, N0), rep(1 / N1, N1))
 
-    # pull estimate-specific overlay from attribute if present if we're given a
-    # synthetic control estimate or overlay is one, take note: we'll plot it
-    # differently
+    # use estimate-specific overlay attribute if present; SC estimates/overlays
+    # are plotted differently
     if (!is.null(attr(est, "overlay"))) {
       over <- attr(est, "overlay")
     }
@@ -805,9 +738,8 @@ sdid_plot <- function(
       unit = rownames(spaghetti.trajectories)
     )
 
-    # The treatment line is drawn midway between the last period before
-    # treatment and the first period treated, the adoption period, which is
-    # recorded with it.
+    # Treatment line midway between last pre-period and adoption period
+    # (recorded with it).
     T0s <- attr(est, "T0s")
     if (is.null(T0s)) {
       T0s <- T0
@@ -868,8 +800,6 @@ sdid_plot <- function(
     })
   })
 
-  # Each estimate has its own panel, labeled by its name, so names must not
-  # repeat.
   if (anyDuplicated(names(estimates))) {
     stop(
       "Each estimate is plotted in its own panel, labeled by its name, ",
@@ -907,12 +837,9 @@ sdid_plot <- function(
     x[!x$is.sc, ]
   }
 
-  # invoke the geom with 'frame=frame' included in the aesthetic only if there
-  # are multiple frames This cuts down on warnings without restricting function.
-  # ggplotly understands frame and uses it to create animations if there are
-  # multiple ggplot2's display doesn't and warns 'ignoring unknown aesthetic' if
-  # you include it returns geom(aes, data=data, ...) where aes=base.aes if
-  # there's a single frame
+  # add frame=frame to aes only with multiple frames: ggplotly animates on it,
+  # ggplot2 warns 'ignoring unknown aesthetic'. returns
+  # geom(aes, data=data, ...) where aes=base.aes if there's a single frame
   #					    aes=(base.aes, frame=frame) if there's more than one
   with.frame <- function(geom, base.aes, data, ...) {
     new.aes <- if (multiple.frames) {
@@ -923,9 +850,8 @@ sdid_plot <- function(
     do.call(geom, c(list(new.aes, data = data), list(...)))
   }
 
-  # Opacities are actual opacities, so alpha uses an identity scale. The effects
-  # style draws the trajectories at half opacity and adds the diff-in-diff
-  # diagram.
+  # Alpha values are literal opacities (identity scale). Effects style:
+  # half-opacity trajectories plus DiD diagram.
   ribbon.alpha <- .34
   trajectory.opacity <- if (style == "effects") {
     .5
@@ -933,28 +859,22 @@ sdid_plot <- function(
     1
   }
   ribbons <- no.sc(conc$ribbons)
-  # Ticks on the numeric axes. Each axis is labeled as the Stata command labels
-  # its axes by default, with about five nice ticks covering the data, and its
-  # range is widened to its outermost ticks. The ticks come from the algorithm
-  # ggplot2 uses by default (Talbot, Lin and Hanrahan 2010) in its loose form,
-  # which places the first tick at or below the smallest value and the last at
-  # or above the largest. Both axes are padded by 2% of their range beyond their
-  # ends, so that the content sits close to the axis lines.
+  # Numeric axes as Stata labels them: ~5 loose ticks (Talbot, Lin & Hanrahan
+  # 2010, ggplot2's default) covering the data, range widened to outer ticks.
+  # 2% padding keeps content close to the axis lines.
   padding <- .02
   machinery <- tick_machinery(padding)
   choose.ticks <- machinery$choose.ticks
   axis.functions <- machinery$axis.functions
   y.axis <- axis.functions("y", FALSE, y.breaks)
-  # The time axis is a whole-number axis when every period is a whole number.
+  # Whole-number time axis iff all periods are integers.
   x.axis <- axis.functions(
     "x",
     all(abs(conc$lines$x - round(conc$lines$x)) < 1e-9),
     x.breaks
   )
-  # Move each panel's band down onto the nearest tick below it, so that a weight
-  # of zero lines up with a labeled value on the left axis. Moving the band
-  # changes the panel's range, which can change the ticks, so the step repeats
-  # until the band sits on one of the ticks of its final range.
+  # Snap each band's baseline down to the nearest tick so zero weight lines up
+  # with a labeled value. Moving changes the range, hence ticks, so iterate.
   for (f in unique(ribbons$facet)) {
     in.panel <- ribbons$facet == f
     bottom <- min(ribbons$ymin[in.panel])
@@ -987,9 +907,8 @@ sdid_plot <- function(
       ribbons$band.bottom[in.panel] <- ribbons$band.bottom[in.panel] - shift
     }
   }
-  # Keep only the stretches of each band where the weights are positive, with
-  # the zero-weight period on either side so each stretch rises from the
-  # baseline. Each stretch is its own group, so nothing is drawn between them.
+  # Keep positive-weight stretches plus a flanking zero so each rises from the
+  # baseline; each stretch is its own group.
   ribbons <- do.call(
     rbind,
     lapply(
@@ -1009,12 +928,11 @@ sdid_plot <- function(
     )
   )
   if (is.null(ribbons)) {
-    # No band at all, as for an SC estimate, whose time weights are all zero.
+    # No band, e.g. SC (all time weights zero).
     ribbons <- no.sc(conc$ribbons)[0, ]
     ribbons$stretch <- character(0)
   }
-  # Each positive stretch of the band is outlined all the way around, so the
-  # outline also runs beneath it.
+  # Outline each positive stretch fully, including beneath.
   p <- ggplot2::ggplot() +
     ggplot2::geom_ribbon(
       ggplot2::aes(
@@ -1045,10 +963,8 @@ sdid_plot <- function(
       linewidth = line.width
     )
   if (style == "effects") {
-    # The diff-in-diff diagram in black. The treated and synthetic control trend
-    # segments are solid, the treated unit's counterfactual, which runs parallel
-    # to the synthetic control's trend, is dotted, and a red arrow shows the
-    # effect.
+    # DiD diagram in black: solid treated/SC trends, dotted counterfactual
+    # parallel to SC, red effect arrow.
     p <- p +
       with.frame(
         ggplot2::geom_segment,
@@ -1140,7 +1056,7 @@ sdid_plot <- function(
   single.panel <- all(conc$lines$facet == conc$lines$facet[1])
   stacked <- !single.panel
   if (stacked) {
-    # Panels are stacked in a column, in the order the estimates were given.
+    # Stack panels in a column, in input order.
     facet.levels <- unique(as.character(conc$lines$facet))
     p <- p +
       ggplot2::facet_wrap(
@@ -1155,9 +1071,8 @@ sdid_plot <- function(
         as.Date(colnames(attr(estimates[[1]], "setup")$Y))
         ggplot2::scale_x_continuous(
           labels = function(time) {
-            # Dates are stored as days since R's origin, 1970-01-01, so the
-            # axis is numeric and its labels convert the days back to dates.
-            # R before 4.3.0 requires the origin to be given.
+            # Dates are days since 1970-01-01; labels convert back.
+            # R < 4.3.0 needs origin.
             as.Date(time, origin = "1970-01-01")
           },
           breaks = if (is.null(x.breaks)) {
@@ -1169,8 +1084,7 @@ sdid_plot <- function(
         )
       },
       error = function(e) {
-        # Date axes keep ggplot2's ticks, since nice numbers of days are not
-        # nice dates.
+        # Keep ggplot2's date ticks: nice day counts aren't nice dates.
         ggplot2::scale_x_continuous(
           limits = x.axis$limits,
           breaks = x.axis$breaks,
@@ -1180,10 +1094,8 @@ sdid_plot <- function(
       }
     )
 
-  # Right-hand axis for the time weights. A ribbon reaching height h above the
-  # band's bottom represents the weight h / band.height * band.top. It is drawn
-  # only for a single band in a single panel, since one secondary axis cannot
-  # describe several bands drawn on different scales.
+  # Right axis for time weights: ribbon height h above band bottom = weight
+  # h / band.height * band.top. Single band/panel only.
   bands <- unique(ribbons[,
     c("band.bottom", "band.height", "band.top"),
     drop = FALSE
@@ -1195,8 +1107,7 @@ sdid_plot <- function(
     band.top <- bands$band.top
     largest <- max((ribbons$ymax - band.bottom) / band.height * band.top)
     if (is.finite(largest) && largest > 0) {
-      # Fewer ticks when the weights occupy little of the panel, keeping labels
-      # about 5% of its height apart.
+      # Fewer ticks when weights fill little of the panel (labels ~5% apart).
       y.span <- diff(range(c(conc$lines$y, ribbons$ymin, ribbons$ymax)))
       occupied <- (largest / band.top * band.height) / y.span
       n.ticks <- max(1, min(4, floor(occupied / .05)))
@@ -1229,7 +1140,7 @@ sdid_plot <- function(
       weight.title.y <- band.bottom + band.height * max(breaks) / band.top
     }
   }
-  # Plots without a weight axis still get the same vertical padding.
+  # Same vertical padding without a weight axis.
   if (is.null(weight.title.y)) {
     p <- p +
       ggplot2::scale_y_continuous(
@@ -1266,14 +1177,10 @@ sdid_plot <- function(
       axis.text = ggplot2::element_text(size = 10),
       legend.text = ggplot2::element_text(size = 12)
     )
-  # A single panel gets an open frame. Its outcome and time axis lines are drawn
-  # as a range frame once the plot is complete, below. The weight axis stops at
-  # its outermost ticks, as it describes only the band. Panels stacked in a
-  # column each get the single panel's open frame, drawn once the plot is
-  # complete, below, with the time axis only under the bottom panel, so that the
-  # gridlines run through. A staggered design's cohorts are identified by their
-  # adoption periods, labeled under each panel, and other panels by a title
-  # above them. Panels side by side keep the box around each panel.
+  # Single panel: open frame; outcome/time axes drawn as a range frame below,
+  # weight axis stops at outer ticks. Stacked: same frame, time axis on bottom
+  # only so gridlines run through; cohorts labeled by adoption period, others by
+  # title. Side-by-side panels keep boxes.
   if (stacked) {
     p <- p +
       ggplot2::theme(
@@ -1301,8 +1208,8 @@ sdid_plot <- function(
         )
       ) +
       ggplot2::coord_cartesian(clip = "off")
-    # Room on the right for the weight axes, and below for a cohort label that
-    # must go under the time axis's labels.
+    # Right margin for weight axes; bottom for cohort labels pushed below the
+    # time-axis labels.
     right <- if (lambda.axis && nrow(ribbons) > 0) {
       5.5 + 48
     } else {
@@ -1323,22 +1230,17 @@ sdid_plot <- function(
         axis.line = ggplot2::element_line(color = "black", linewidth = .4),
         axis.ticks = ggplot2::element_line(color = "black")
       )
-    # Only when the weight axis exists. A guide for a secondary axis that does
-    # not exist makes ggplot2 3.5 and later draw a copy of the left axis on the
-    # right.
+    # Only with a weight axis: otherwise ggplot2 >= 3.5 copies the left axis
+    # to the right.
     if (
       utils::packageVersion("ggplot2") >= "3.5.0" && !is.null(weight.title.y)
     ) {
       p <- p + ggplot2::guides(y.sec = ggplot2::guide_axis(cap = "both"))
     }
   }
-  # The weight axis title runs vertically beside the axis labels, as an axis
-  # title would, but is centered on the span of the weight axis (zero to its top
-  # tick) rather than on the whole panel. It is placed in data coordinates at
-  # the panel's right edge, offset past the ticks and labels, so the panel stops
-  # clipping and the right margin widens to hold it. Widths are left to grid to
-  # measure when the plot is drawn, on the device in use, rather than measured
-  # here, which would open a graphics device as a side effect.
+  # Weight axis title: vertical, centered on the axis span (0 to top tick), not
+  # the panel. Placed in data coords past the ticks, clipping off. Widths left
+  # to grid at draw time; measuring here would open a graphics device.
   if (!is.null(weight.title.y)) {
     label.widths <- lapply(
       formatC(breaks, format = "f", digits = digits),
@@ -1400,8 +1302,10 @@ sdid_plot <- function(
   p
 }
 
-#' Takes an `sdid()` object and plots the treated and synthetic control
-#' trajectories along with a placebo plot stacked in a column. Requires ggplot2.
+#' Plot an estimate with its in-time placebo
+#'
+#' Plots the treated and synthetic control trajectories of an `sdid()` result,
+#' with an in-time placebo stacked below. Requires ggplot2.
 #' @param estimate The result of `sdid()` with a single adoption period.
 #' @param treated.fraction The share of the periods before treatment that
 #'        the placebo treats, as in `sdid_placebo()`. Defaults to NULL.
@@ -1411,10 +1315,7 @@ sdid_plot <- function(
 #'        in `sdid_placebo()`. Defaults to "auto".
 #' @param x.breaks,y.breaks Optional ticks for the time and outcome axes, as
 #'        in `sdid_plot()`. The outcome ticks apply to both panels.
-#' @return A ggplot object, which draws the plot when printed and can be
-#'   extended with `+`, for example with labels, themes or further layers.
-#'   Scales, facets and coordinate systems added this way replace those the plot
-#'   sets, as for [sdid_plot()].
+#' @return A ggplot object, which can be extended with `+`.
 #' @export sdid_placebo_plot
 sdid_placebo_plot <- function(
   estimate,
@@ -1452,19 +1353,13 @@ sdid_placebo_plot <- function(
 #' cohort of a staggered design.
 #'
 #' `type = "scatter"` (the default) plots each control's weight against its own
-#' estimate, with the effect as a red line, so that the controls that make up
-#' the synthetic control are at the right and whether they agree with each other
-#' is seen in their spread about the line. Every control is drawn, those with no
-#' weight as open circles, so that the plot also shows whether the weighting
-#' changed the answer, and `label.units` chooses which are named. `type =
-#' "bars"` draws a bar for each control with weight chosen by `label.units`,
-#' ordered from the largest weight down, running from the effect to the
-#' control's own estimate, with its weight at the end. A control pulls the
-#' estimate up if its bar runs right of the line and down if left, by its weight
-#' times the bar's length.
+#' estimate, with the overall effect as a red line. Controls with zero weight
+#' are drawn as open circles. `type = "bars"` draws a bar from the effect to
+#' each weighted control's estimate, largest weight first; bars to the right
+#' pull the estimate up, bars to the left pull it down.
 #'
-#' Requires ggplot2, and the ggrepel package to place the scatter's labels
-#' without overlap. Without ggrepel, labels that would overlap are left out.
+#' Requires ggplot2. If ggrepel is installed, it is used to keep labels from
+#' overlapping.
 #' @param estimates The result of `sdid()`, or a named list of results with
 #'        a single adoption period each, drawn in panels labeled by their
 #'        names. A staggered result is drawn with a panel for each cohort,
@@ -1476,18 +1371,13 @@ sdid_placebo_plot <- function(
 #' @param cohort For a staggered result, the adoption period of the one
 #'        cohort to plot, as it appears in the result's `cohorts`. Defaults
 #'        to NULL, plotting every cohort in its own panel.
-#' @param label.units Which controls to name. "all" names every control,
-#'        "weighted" those with positive weight, and a whole number n the n
-#'        with the largest weights, with any tied at the cutoff included.
-#'        Defaults to "all" for a single panel and 10 for several. The
-#'        scatter still draws the controls it leaves unnamed, while the bars
-#'        draw only the controls they name.
+#' @param label.units Which controls to label: "all", "weighted" (positive
+#'        weight only), or a number n for the n largest weights. Defaults to
+#'        "all" for one panel and 10 for several. The bars only show labeled
+#'        controls.
 #' @param weighted.only TRUE to leave controls with no weight out of the
 #'        scatter. Defaults to FALSE, drawing them as open circles.
-#' @return A ggplot object, which draws the plot when printed and can be
-#'   extended with `+`, for example with labels, themes or further layers.
-#'   Scales, facets and coordinate systems added this way replace those the plot
-#'   sets.
+#' @return A ggplot object, which can be extended with `+`.
 #' @export sdid_units_plot
 sdid_units_plot <- function(
   estimates,
@@ -1542,9 +1432,7 @@ sdid_units_plot <- function(
     stop('label.units must be "all", "weighted" or a whole number of units.')
   }
 
-  # Each control's own estimate, the difference-in-differences of the treated
-  # units with that control alone, whose average with the unit weights is the
-  # estimate.
+  # Per-control DiD (treated vs that control alone); weighted mean = estimate.
   data <- do.call(
     rbind,
     lapply(seq_along(estimates), function(e) {
@@ -1608,8 +1496,7 @@ sdid_units_plot <- function(
     ggplot2::facet_wrap(ggplot2::vars(panel), ncol = 1, scales = "free")
   }
 
-  # The controls chosen by label.units in each panel, which the scatter names
-  # and the bars draw.
+  # Controls picked by label.units per panel (named in scatter, drawn as bars).
   data$named <- unlist(
     lapply(split(data$weight, data$panel), function(w) {
       positive <- w > 0
@@ -1632,8 +1519,8 @@ sdid_units_plot <- function(
       data <- data[data$weight > 0, ]
     }
     data$name <- ifelse(data$named, data$unit, "")
-    # The effect's label sits midway along its line. Points spread under it keep
-    # the controls' labels off it.
+    # Effect label midway along its line; points spread under it keep control
+    # labels clear.
     ranges <- tapply(
       data$weight,
       data$panel,
@@ -1706,9 +1593,8 @@ sdid_units_plot <- function(
         colour = "grey20"
       ))
     }
-    # No border round the effect's label. ggplot2 4.0.0 renamed the argument,
-    # from label.size to linewidth, which it takes through ..., so the version
-    # decides which is used.
+    # No label border. ggplot2 4.0.0 renamed label.size -> linewidth (via ...),
+    # so branch on version.
     border <- if (utils::packageVersion("ggplot2") >= "4.0.0") {
       list(linewidth = 0)
     } else {
@@ -1771,9 +1657,8 @@ sdid_units_plot <- function(
     return(add_panel_frames(p))
   }
 
-  # The bars, for controls with weight, ordered within each panel from the
-  # largest weight down. Their axis is padded by 8% rather than 2%, to make room
-  # for the weights at the bars' ends.
+  # Bars for weighted controls, largest first per panel. 8% padding (not 2%)
+  # leaves room for weight labels.
   machinery <- tick_machinery(.08)
   bars <- data[data$weight > 0 & data$named, ]
   bars$id <- paste(bars$panel, bars$unit, sep = "\r")
@@ -1784,9 +1669,8 @@ sdid_units_plot <- function(
   )
   bars$text <- formatC(bars$weight, format = "f", digits = 3)
   bars$right <- bars$own > bars$effect
-  # Each panel's ticks are chosen from its controls' estimates and the effect,
-  # and the effect gets a tick of its own, unlabeled, as its label sits above
-  # its line.
+  # Ticks from controls' estimates and the effect; effect gets its own unlabeled
+  # tick (its label sits above its line).
   limits <- lapply(split(bars, bars$panel, drop = TRUE), function(b) {
     core <- range(c(b$own, b$effect[1]))
     base::range(c(machinery$choose.ticks(core[1], core[2])$at, core))
@@ -1876,9 +1760,8 @@ sdid_units_plot <- function(
   add_panel_frames(p)
 }
 
-# Open frames for the panels of a plot, one or several, each axis line running
-# from the lowest to the highest of the panel's data and ticks, or over the
-# positions of a discrete axis.
+# Open frames for one or more panels; axis lines span data and ticks, or a
+# discrete axis's positions.
 add_panel_frames <- function(p) {
   built <- ggplot2::ggplot_build(p)
   layout <- built$layout$layout

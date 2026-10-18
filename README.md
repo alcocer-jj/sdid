@@ -4,9 +4,9 @@
 [![R-universe](https://img.shields.io/badge/dynamic/json?url=https://alcocer-jj.r-universe.dev/api/packages/sdid&query=$.Version&label=R-universe&color=blue)](https://alcocer-jj.r-universe.dev/sdid)
 [![sdid](https://img.shields.io/badge/License-BSD_3--Clause-orange)](https://alcocer-jj.r-universe.dev/sdid)
 
-`sdid` estimates average effects of a treatment on the treated (ATT) in panel data using synthetic difference-in-differences (SDiD), synthetic control (SC), or difference-in-differences (DiD). It follows the design of the Stata package [`sdid`](https://github.com/Daniel-Pailanir/sdid) by Clarke et al. (2024), where the function call accepts a long format panel dataset, automatically detects whether a staggered treatment approach is needed, and estimates the effect with bootstrap, jackknife, or placebo inference.
+This package is intended to help R users estimate average effects on the treated (ATT) in panel data (under identifying assumptions) using synthetic difference-in-differences (SDiD). We built this package to implement key aspects of the related Stata package [`sdid`](https://github.com/Daniel-Pailanir/sdid) by Clarke et al. (2024) in R. As in that package, our implementation accepts a long format panel dataset, detects whether a staggered treatment approach is needed, and estimates the effect with bootstrap, jackknife, or placebo inference.
 
-The package derives from [`synthdid`](https://github.com/synth-inference/synthdid) 0.0.9 by Arkhangelsky et al., (2021). Relative to that package, it adds staggered adoption, optimized and projected methods of covariate adjustment, compiled estimation with parallel replications, and a redesigned interface built around a consolidated function.
+We build on a prior R implementation of this method [`synthdid`](https://github.com/synth-inference/synthdid) 0.0.9 by Arkhangelsky et al. (2021), adding staggered adoption, optimized and projected methods of covariate adjustment, and a redesigned interface. To substantially reduce computation time, we reimplement the estimation of the unit and time weights in compiled C++ code and parallelize the resampling procedures used for inference.
 
 ## Installation
 
@@ -22,7 +22,7 @@ install.packages("sdid", repos = c("https://alcocer-jj.r-universe.dev",
 
 ## Syntax
 
-The full call is shown below, with each argument's default. For arguments that take one of several values, the first value listed is the default, except for `vce`, which has no default and must be given.
+A full call of the main function is shown below. For arguments that take one of several values, the first value listed is the default, except for `vce`, which has no default and must be given.
 
 ```r
 sdid(
@@ -52,7 +52,7 @@ sdid(
 * `outcome`: name of the outcome variable.
 * `unit`: name of the unit identifier.
 * `time`: name of the time period variable.
-* `treatment`: name of the binary treatment variable, where 1 denotes the first post-treatment period.
+* `treatment`: name of the binary treatment variable, equal to 1 for a treated unit in every period from its first treated period onward, and 0 otherwise.
 * `vce`: inference method (required).
 * `covariates`: names of time-varying covariate variables, if any.
 * `method`: synthetic DiD, synthetic control, or difference-in-differences.
@@ -101,10 +101,9 @@ It also draws the trends plot unless `graph = FALSE`.
 
 ![](man/figures/plot1.png)
 
-
 ## Staggered adoption
 
-When treated units adopt treatment in different periods, `sdid()` estimates each adoption cohort, meaning the units first treated in that period together with the units never treated, as its own design. The overall effect averages the cohort effects with weights proportional to each cohort's number of treated units times its number of post-treatment periods, following Algorithm 1 of Clarke et al. (2024). Bootstrap, jackknife, and placebo inference then resamples the whole panel jointly, as in Algorithms 2 to 4 of Clarke et al. (2024).
+When treated units adopt treatment in different periods, `sdid()` estimates adoption-period effects. The overall effect is a weighted average of these effects with weights proportional to each cohort's number of treated units times its number of post-treatment periods, following Algorithm 1 of Clarke et al. (2024). Bootstrap, jackknife, and placebo inference then resample the whole panel jointly, as in Algorithms 2 to 4 of Clarke et al. (2024).
 
 ```r
 library(haven)
@@ -147,7 +146,7 @@ fit2 <- sdid(
 
 ## Covariates
 
-Time-varying covariates are named with `covariates`, while `covariate.method` selects one of the two adjustments the package offers. The default, `"optimized"`, estimates their coefficients jointly with the weights, following Arkhangelsky et al. (2021), after standardizing each covariate. The alternative, `"projected"`, estimates them from a two-way fixed effects regression on observations without treatment, following Kranz (2022) and Clarke et al. (2024).
+Time-varying covariates can be supplied with `covariates`, while `covariate.method` selects one of the two adjustments. The default, `"optimized"`, estimates their coefficients jointly with the weights, following Arkhangelsky et al. (2021), after standardizing each covariate. The alternative, `"projected"`, estimates them from a two-way fixed effects regression on the never-treated units, following Kranz (2022) and Clarke et al. (2024).
 
 ```r
 library(sdid)
@@ -181,7 +180,7 @@ fit3 <- sdid(
 
 ## Tables
 
-Results work with [modelsummary](https://modelsummary.com) and other packages that read results through `tidy()` and `glance()`, with no further setup. Each model's effect is named by its treatment column by default, so `labels = "ATT"` puts the effects of models with different treatment columns on one row. For a staggered design, `cohorts = TRUE` adds a row for each adoption period, and `labels` can then name every row, the overall effect first.
+Results work with [modelsummary](https://modelsummary.com) and other packages that read results through `tidy()` and `glance()`. Each model's effect is named by its treatment column by default, so `labels = "ATT"` puts the effects of models with different treatment columns on one row. For a staggered design, `cohorts = TRUE` adds a row for each adoption period, and `labels` can then name every row.
 
 ```r
 library(modelsummary)
@@ -273,7 +272,7 @@ modelsummary(
 
 ## Plots
 
-The plotting functions take the result of `sdid()`, drawing one panel per adoption cohort for a staggered design, each labeled at its adoption period and with its own time-weight axis. By default, as in Stata, each numeric axis has about five nice ticks covering the data and runs between its outermost ticks. To choose the ticks yourself, give them as `x.breaks` and `y.breaks`, which the frame and labels follow, rather than adding a scale to the plot.
+The plotting functions take the result of `sdid()` and draw one panel per adoption cohort for a staggered design.
 
 ```r
 sdid_plot(fit1) # trajectories and time weights
@@ -291,16 +290,15 @@ sdid_placebo_plot(fit1, placebo.time = 1981) # in-time placebo plot
 
 ![](man/figures/plot3.gif)
 
-
 ## Performance
 
-Weights are estimated in compiled code, and bootstrap, jackknife, and placebo replications run in parallel across all available threads, with identical results for any number of threads under the same seed. The option `sdid.num.threads`, or the `num.threads` argument of `sdid()`, limits the number of threads. Interrupting a run with Ctrl-C stops the replications and returns every thread.
+Unit and time weights are estimated in C++, and bootstrap, jackknife, and placebo replications run in parallel across all available threads. The option `sdid.num.threads`, or the `num.threads` argument of `sdid()`, limits the number of threads.
 
 ## Acknowledgments 
 
-We are grateful to Dmitry Arkhangelsky, Susan Athey, David A. Hirshberg, Guido W. Imbens and Stefan Wager, the authors of the [`synthdid`](https://github.com/synth-inference/synthdid) package for R, and to Damian Clarke, Daniel Pailañir, Susan Athey, Guido Imbens, Diego Ciccia, and Tommy Morgan, the authors and contributors of the [`sdid`](https://github.com/Daniel-Pailanir/sdid) package for Stata. Their work established the methods and software this package builds on, and by sharing their code openly on GitHub, they made it possible for others to extend and adapt it.
+This package builds heavily on the work of Dmitry Arkhangelsky, Susan Athey, David A. Hirshberg, Guido W. Imbens and Stefan Wager, the authors of the [`synthdid`](https://github.com/synth-inference/synthdid) package for R, and Damian Clarke, Daniel Pailañir, Susan Athey, Guido Imbens, Diego Ciccia, and Tommy Morgan, the authors and contributors of the [`sdid`](https://github.com/Daniel-Pailanir/sdid) package for Stata. We build on their methods and the code they made openly available.
 
-Additionally, development of this package was assisted by [Claude Code](https://claude.com/product/claude-code), an AI coding assistant by Anthropic, for code refactoring, documentation updates, and package restructuring.
+Development of this package was assisted by [Claude Code](https://claude.com/product/claude-code), an AI coding assistant by Anthropic, for code refactoring, documentation updates, and package restructuring.
 
 ## References
 
@@ -313,3 +311,4 @@ Kranz, Sebastian. (2022). "Synthetic Difference-in-Differences with Time-Varying
 ## License
 
 BSD 3-Clause. See [LICENSE.md](LICENSE.md). The package derives from synthdid 0.0.9, Copyright 2019 Stanford University, used under its BSD 3-Clause option.
+

@@ -7,12 +7,8 @@ navbar:
   left:
   - text: "Get started"
     href: articles/sdid.html
-  - text: "Articles"
-    menu:
-    - text: "Plotting results"
-      href: articles/plotting.html
-    - text: "Prop 99 with three estimators"
-      href: articles/paper-results.html
+  - text: "Plotting"
+    href: articles/plotting.html
   - text: "Reference"
     href: reference/index.html
   - text: "News"

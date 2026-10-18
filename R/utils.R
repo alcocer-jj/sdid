@@ -80,9 +80,7 @@ panel.matrices <- function(
   covariates = NULL,
   staggered = FALSE
 ) {
-  # Tibbles and data.tables differ from data frames in what `[` returns for a
-  # single column, a one-column table rather than a vector, which the code below
-  # relies on, so the panel is converted to a data frame first.
+  # Tibbles/data.tables return a one-column table from `[`, not a vector.
   panel <- as.data.frame(panel)
   keep <- c(unit, time, outcome, treatment, covariates)
   if (!all(keep %in% 1:ncol(panel) | keep %in% colnames(panel))) {
@@ -174,9 +172,7 @@ panel.matrices <- function(
     byrow = TRUE,
     dimnames = list(unique(panel[, unit]), unique(panel[, time]))
   )
-  # any() expects logical values and warns on numbers, which a treatment column
-  # stored as double would give it. The values are 0 or 1, checked above, so
-  # comparing with 1 changes nothing else.
+  # == 1 avoids any() warning on a double column; values are 0/1.
   treated <- W == 1
   # indicator for units that are treated at any time
   w <- apply(treated, 1, any)
@@ -200,8 +196,7 @@ panel.matrices <- function(
       "The package cannot use this data. Treatment adoption is not simultaneous."
     )
   } else {
-    # Staggered adoption. The checks follow the requirements of the Stata sdid
-    # command.
+    # Staggered adoption; checks follow the Stata sdid command.
     if (any(apply(W, 1, function(row) any(diff(row) < 0)))) {
       stop(
         "Some units change from treated to untreated. Treatment must continue once it begins."
@@ -243,8 +238,7 @@ panel.matrices <- function(
     )
   }
   if (length(covariates) > 0) {
-    # Built from the same sorted rows as Y and reordered the same way, so X
-    # lines up with Y unit by unit.
+    # Same row order as Y, so X lines up by unit.
     X <- array(
       NA_real_,
       dim = c(num.units, num.years, length(covariates)),
@@ -304,6 +298,9 @@ random.low.rank <- function() {
   alpha <- outer(10 * sample(1:n) / n, rep(1, T))
   beta <- outer(rep(1, n), 10 * (1:T) / T)
   mu <- U %*% t(V) + alpha + beta
+  if (!requireNamespace("mvtnorm", quietly = TRUE)) {
+    stop("random.low.rank requires the package `mvtnorm`.")
+  }
   error <- mvtnorm::rmvnorm(n, sigma = var, method = "chol")
   Y <- mu + tau * W + sigma * error
   rownames(Y) <- 1:n

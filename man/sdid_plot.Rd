@@ -2,10 +2,7 @@
 % Please edit documentation in R/plot.R
 \name{sdid_plot}
 \alias{sdid_plot}
-\title{Takes an \code{sdid()} object and plots the treated and synthetic control
-trajectories along with the lambda weights conveying which pre-treatment
-periods were most informative for predicting post-treatment outcomes among
-the controls.}
+\title{Plot treated and synthetic control trajectories}
 \usage{
 sdid_plot(
   estimates,
@@ -45,58 +42,35 @@ appears in the legend. Defaults to 'synthetic control'.}
 \item{spaghetti.units}{A list of units to plot individually alongside the
 treatment and control curves. Defaults to the empty list.}
 
-\item{spaghetti.matrices}{A list of matrices, one for each element of
-estimates, of trajectories to plot individually. The rows of these
-matrices should be the same length as the trajectories in Y and they
-must be named so trajectories can be labeled in the plot.}
+\item{spaghetti.matrices}{A list of matrices, one per estimate, of extra
+trajectories to plot. Each row is a trajectory, one column per
+period, and row names are used as labels.}
 
 \item{lambda.comparable}{Logical argument where if TRUE, the lambda
 weight axis is scaled to range from 0 to 1. Useful for when comparing
 across stacked panels. Defaults to FALSE.}
 
-\item{overlay}{A number between 0 and 1 that shifts the synthetic control
-toward the treated trajectory by that fraction of the difference in
-their time-weighted pre-treatment averages. At 0, the default, both
-are drawn as estimated. Values near 1 bring them close, which makes
-it easier to judge whether they move in parallel, and at 1 they
-overlap and the effects diagram is left out, as for a synthetic
-control estimate. An estimate's own value can be set as its
-attribute "overlay". A vector draws the plot at each value, marked
-by the frame aesthetic, which plotly shows as an animation.}
+\item{overlay}{Between 0 and 1. Shifts the synthetic control toward the
+treated line by this fraction of their pre-treatment gap, which makes
+it easier to see whether they move in parallel. Defaults to 0 (no
+shift). A vector of values can be animated with plotly.}
 
-\item{lambda.plot.scale}{A number setting the height of the time weights'
-band, the range of the trajectories divided by this number.
-Defaults to 3.}
+\item{lambda.plot.scale}{Height of the time-weight band: the range of the
+trajectories divided by this number. Defaults to 3.}
 
-\item{effect.curvature}{A number setting the curvature of the arrow that
-marks the effect in the effects style. Defaults to 0.3.}
+\item{effect.curvature}{Curvature of the effect arrow in the effects style.}
 
-\item{line.width}{A number setting the width of the trajectory lines.
-Defaults to 0.5.}
+\item{line.width}{Width of the trajectory lines.}
 
-\item{point.size}{A number setting the size of the points in the effects
-style's diagram. Defaults to 1.}
+\item{point.size}{Size of the points in the effects style.}
 
-\item{onset.alpha}{A number between 0 and 1 setting the opacity of the red
-dashed line marking the start of treatment, drawn midway between
-the last period before treatment and the first treated period.
-Defaults to 0.8.}
+\item{onset.alpha}{Opacity of the red dashed line that marks treatment.}
 
-\item{spaghetti.line.width}{A number setting the width of the trajectories
-drawn by spaghetti.units and spaghetti.matrices. Defaults to 0.2.}
+\item{spaghetti.line.width, spaghetti.label.size, spaghetti.line.alpha, spaghetti.label.alpha}{Width, label size and opacity of the spaghetti trajectories and their
+labels.}
 
-\item{spaghetti.label.size}{A number setting the size of their labels.
-Defaults to 2.}
-
-\item{spaghetti.line.alpha}{A number between 0 and 1 setting the opacity
-of those trajectories. Defaults to 0.3.}
-
-\item{spaghetti.label.alpha}{A number between 0 and 1 setting the opacity
-of their labels. Defaults to 0.5.}
-
-\item{alpha.multiplier}{A vector with one number per estimate, multiplying
-the opacity of everything drawn for that estimate, to emphasize
-some estimates over others. Defaults to 1 for every estimate.}
+\item{alpha.multiplier}{One number per estimate that scales its opacity,
+to emphasize some estimates over others.}
 
 \item{style}{The plot's style, "minimal" (the default) or "effects". See
 Details.}
@@ -105,40 +79,31 @@ Details.}
 weights' band shows the band's scale on a right-hand axis. Defaults
 to TRUE.}
 
-\item{x.breaks, y.breaks}{Optional ticks for the time and outcome axes, as
-numbers, or as dates for a time axis of dates. A numeric axis runs
-between its outermost ticks, widened to cover the data if needed,
-and the frame, padding, cohort labels and time weights' band follow
-them. The band's baseline sits on the highest outcome tick below
-it, if there is one, and with stacked panels the outcome ticks
-apply to every panel. A time axis of dates uses the given dates as
-ticks and keeps the range of the data. Prefer these to adding a
-scale to the returned plot, which replaces the one it sets.}
+\item{x.breaks, y.breaks}{Optional tick positions for the time and outcome
+axes (numbers, or dates for a date axis). The axes are extended to
+the outermost ticks if needed. With stacked panels, \code{y.breaks}
+applies to every panel.}
 }
 \value{
-A ggplot object, which draws the plot when printed and can be
-extended with \code{+}, for example with labels, themes or further layers.
-Scales, facets and coordinate systems added this way replace those the plot
-sets, as described above.
+A ggplot object, which can be extended with \code{+}.
 }
 \description{
-Two plotting styles are available: "minimal" and "effects". Its default,
-\code{style = 'minimal'}, plots both trajectories in black, with the treatment
-line being solid and synthetic line dashed. The time weights are plotted as
-a gray band with their scale on a right-hand axis, while the last
-pre-treatment period is plotted a vertical red dashed line. The alternative,
-\code{style = 'effects'} adds a diff-in-diff diagram conveying the treatment
-effect while reducing the trajectory lines opacity.
+Plots the treated and synthetic control trajectories of an \code{sdid()} result,
+along with the time weights, which show which pre-treatment periods were
+most informative for predicting post-treatment outcomes among the controls.
 }
 \details{
-Feeding a staggered treatment \code{sdid()} object plots cohort panels stacked in
-a column and are identified by their adoption periods, labeled under each
-panel at that period. Adding your own x- or y-scale to the returned plot
-replaces the one this function sets, and with it the time-weight axis or the
-x padding. Adding facets or a coordinate system misplaces the time-weight
-axes of stacked panels. If a list of estimates is passed, plots each of them
-stacked in its own panel. Plotting several estimates in one shared panel
-is not supported.
+Two plotting styles are available: "minimal" and "effects". The default,
+\code{style = "minimal"}, plots both trajectories in black, with the treated line
+solid and the synthetic control dashed. The time weights are plotted as a
+gray band with their scale on a right-hand axis, and a red dashed line marks
+treatment. \code{style = "effects"} adds a diff-in-diff diagram of the treatment
+effect and fades the trajectory lines.
+
+A staggered \code{sdid()} result is drawn as one panel per cohort, stacked in a
+column and labeled by adoption period. A list of results is drawn the same
+way, one panel each. To change the axis ticks, use \code{x.breaks} and \code{y.breaks}
+rather than adding your own scale, which would drop the time-weight axis.
 
 Requires ggplot2.
 }
