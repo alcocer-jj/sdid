@@ -1,21 +1,22 @@
 # Getting started with sdid
 
-sdid estimates the effect of a treatment on the treated units of a panel
-with synthetic difference-in-differences (Arkhangelsky et al. 2021), in
-the manner of the Stata command `sdid` (Clarke, Pailañir, Athey and
-Imbens 2024). It handles designs in which every treated unit is first
-treated in the same period, and staggered designs in which units are
-first treated in different periods.
+[`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md)
+estimates the effect of a treatment on the treated units of a panel with
+synthetic difference-in-differences (Arkhangelsky et al. 2021).
+Following the Stata command `sdid` (Clarke, Pailañir, Athey and Imbens
+2024), it handles designs in which every treated unit is first treated
+in the same period, and staggered designs in which units are first
+treated in different periods.
 
 \
 [`library`](https://rdrr.io/r/base/library.html)`(`[`sdid`](https://github.com/alcocer-jj/sdid)`)`
 
 ## Estimating an effect
 
-The data are a balanced panel in long format, one row per unit and
-period. The treatment column is 1 for a treated unit from its first
-treated period onward, and 0 otherwise. In the Proposition 99 data,
-California is treated from 1989.
+The method requires a balanced panel in long format (i.e., one row per
+unit and period). The treatment column is 1 for a treated unit from its
+first treated period onward, and 0 otherwise. In the Proposition 99
+data, California is treated from 1989.
 
 \
 [`data`](https://rdrr.io/r/utils/data.html)`(``california_prop99``)`\
@@ -29,13 +30,12 @@ California is treated from 1989.
 `#> 6     Georgia 1970          109.9       0`
 
 [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md) takes
-the panel and the names of its columns, and the method of inference,
-which must be given. Like the Stata command, it prints a header
-describing the data before estimating, then the results.
+the panel and the names of its columns, and the method of inference. It
+prints a header describing the data, then the results.
 
 \
 `fit`` ``=`` `[`sdid`](https://alcocer-jj.github.io/sdid/reference/sdid.md)`(``california_prop99``, outcome ``=`` ``"PacksPerCapita"``, unit ``=`` ``"State"``,`\
-`           time ``=`` ``"Year"``, treatment ``=`` ``"treated"``, vce ``=`` ``"placebo"``, seed ``=`` ``1213``,`\
+`           time ``=`` ``"Year"``, treatment ``=`` ``"treated"``, vce ``=`` ``"placebo"``, seed ``=`` ``2112``,`\
 `           graph ``=`` ``FALSE``)`\
 `#> `\
 `#> Synthetic Difference-in-Differences Estimator`\
@@ -48,25 +48,25 @@ describing the data before estimating, then the results.
 `#> `\
 `#> `\
 `#>               ATT Std. Err.     z P>|z| [95% Conf. Interval]`\
-`#> treated -15.60383  10.93638 -1.43 0.154  -37.03873   5.83108`\
+`#> treated -15.60383   8.25698 -1.89 0.059  -31.78722   0.57956`\
 `#> `\
 `#> 95% confidence intervals and p-values use the normal approximation.`
 
 `graph = TRUE`, the default, also draws the trends plot, and
-`quietly = TRUE` prints nothing, for example within a loop.
+`quietly = TRUE` prints nothing, which may be helpful if looping across
+DVs.
 
 ## Reading the result
 
-The result prints as the tables above, and standard methods extract its
-parts.
+Standard methods extract its parts.
 
 \
 [`coef`](https://rdrr.io/r/stats/coef.html)`(``fit``)`\
 `#>   treated `\
 `#> -15.60383`\
 [`confint`](https://rdrr.io/r/stats/confint.html)`(``fit``, level ``=`` ``0.9``)`\
-`#>               5 %     95 %`\
-`#> treated -33.59257 2.384911`\
+`#>               5 %      95 %`\
+`#> treated -29.18536 -2.022297`\
 [`nobs`](https://rdrr.io/r/stats/nobs.html)`(``fit``)`\
 `#> [1] 1209`
 
@@ -94,7 +94,8 @@ time weights as data frames.
 
 The unit weights pick the states that, together, track California’s
 trend before 1989. The time weights pick the pre-treatment years whose
-average serves as the baseline for the comparison, here 1986 to 1988.
+average serves as the baseline for the comparison. Here that is 1986 to
+1988.
 
 ## Inference
 
@@ -117,11 +118,11 @@ the estimate.
 
 \
 `less`` ``=`` `[`sdid`](https://alcocer-jj.github.io/sdid/reference/sdid.md)`(``california_prop99``, ``"PacksPerCapita"``, ``"State"``, ``"Year"``, ``"treated"``,`\
-`            vce ``=`` ``"placebo"``, seed ``=`` ``1213``, alternative ``=`` ``"less"``,`\
+`            vce ``=`` ``"placebo"``, seed ``=`` ``2112``, alternative ``=`` ``"less"``,`\
 `            graph ``=`` ``FALSE``, quietly ``=`` ``TRUE``)`\
 [`confint`](https://rdrr.io/r/stats/confint.html)`(``less``)`\
-`#>          0 %     95 %`\
-`#> treated -Inf 2.384911`
+`#>          0 %      95 %`\
+`#> treated -Inf -2.022297`
 
 A one-sided interval is open in the direction of its test. Its bound at
 95% is the bound of the two-sided interval at 90%.
@@ -130,8 +131,6 @@ A one-sided interval is open in the direction of its test. Its bound at
 
 `method` estimates synthetic control (`"sc"`) or
 difference-in-differences (`"did"`) with the same data and inference.
-The Prop 99 comparison is in
-[`vignette("paper-results", package = "sdid")`](https://alcocer-jj.github.io/sdid/articles/paper-results.md).
 
 ## Covariates
 
@@ -195,16 +194,6 @@ The cohorts’ estimates, standard errors and intervals are printed under
 the overall effect and stored in `staggered$cohorts`. The plots draw a
 panel per cohort.
 
-The quota data of Bhalotra et al. (2023), the staggered example of the
-Stata command, can be read from the command’s repository.
-
-\
-`quota`` ``=`` ``haven``::`[`read_dta`](https://haven.tidyverse.org/reference/read_dta.html)`(`[`paste0`](https://rdrr.io/r/base/paste.html)`(`\
-`  ``"https://github.com/Daniel-Pailanir/sdid/raw/main/"``,`\
-`  ``"simulations/cluster_data/quota_example_cluster.dta"``)``)`\
-[`sdid`](https://alcocer-jj.github.io/sdid/reference/sdid.md)`(``quota``, ``"womparl"``, ``"country"``, ``"year"``, ``"quota"``, vce ``=`` ``"bootstrap"``,`\
-`     reps ``=`` ``200``, seed ``=`` ``1``)`
-
 ## Tables
 
 Results work with modelsummary and other packages that read results with
@@ -221,10 +210,6 @@ Results work with modelsummary and other packages that read results with
 Arkhangelsky, D., Athey, S., Hirshberg, D. A., Imbens, G. W., and Wager,
 S. (2021). Synthetic Difference-in-Differences. *American Economic
 Review* 111(12), 4088-4118.
-
-Bhalotra, S., Clarke, D., Gomes, J. F., and Venkataramani, A. (2023).
-Maternal Mortality and Women’s Political Power. *Journal of the European
-Economic Association* 21(5), 2172-2208.
 
 Clarke, D., Pailañir, D., Athey, S., and Imbens, G. (2024). On Synthetic
 Difference-in-Differences and Related Estimation Methods in Stata. *The

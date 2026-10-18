@@ -24,11 +24,7 @@ cohort of a staggered design."></head><body>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/sdid.html">Get started</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/plotting.html">Plotting results</a></li>
-    <li><a class="dropdown-item" href="../articles/paper-results.html">Prop 99 with three estimators</a></li>
-  </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/plotting.html">Plotting</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">News</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/alcocer-jj/sdid"><span class="fa fa-github fa-lg"></span></a></li>
@@ -89,12 +85,10 @@ to NULL, plotting every cohort in its own panel.</p></dd>
 
 
 <dt id="arg-label-units">label.units<a class="anchor" aria-label="anchor" href="#arg-label-units"></a></dt>
-<dd><p>Which controls to name. "all" names every control,
-"weighted" those with positive weight, and a whole number n the n
-with the largest weights, with any tied at the cutoff included.
-Defaults to "all" for a single panel and 10 for several. The
-scatter still draws the controls it leaves unnamed, while the bars
-draw only the controls they name.</p></dd>
+<dd><p>Which controls to label: "all", "weighted" (positive
+weight only), or a number n for the n largest weights. Defaults to
+"all" for one panel and 10 for several. The bars only show labeled
+controls.</p></dd>
 
 
 <dt id="arg-weighted-only">weighted.only<a class="anchor" aria-label="anchor" href="#arg-weighted-only"></a></dt>
@@ -104,25 +98,17 @@ scatter. Defaults to FALSE, drawing them as open circles.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A ggplot object, which draws the plot when printed and can be
-extended with <code>+</code>, for example with labels, themes or further layers.
-Scales, facets and coordinate systems added this way replace those the plot
-sets.</p>
+    <p>A ggplot object, which can be extended with <code>+</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>type = "scatter"</code> (the default) plots each control's weight against its own
-estimate, with the effect as a red line, so that the controls that make up
-the synthetic control are at the right and whether they agree with each other
-is seen in their spread about the line. Every control is drawn, those with no
-weight as open circles, so that the plot also shows whether the weighting
-changed the answer, and <code>label.units</code> chooses which are named. <code>type = "bars"</code> draws a bar for each control with weight chosen by <code>label.units</code>,
-ordered from the largest weight down, running from the effect to the
-control's own estimate, with its weight at the end. A control pulls the
-estimate up if its bar runs right of the line and down if left, by its weight
-times the bar's length.</p>
-<p>Requires ggplot2, and the ggrepel package to place the scatter's labels
-without overlap. Without ggrepel, labels that would overlap are left out.</p>
+estimate, with the overall effect as a red line. Controls with zero weight
+are drawn as open circles. <code>type = "bars"</code> draws a bar from the effect to
+each weighted control's estimate, largest weight first; bars to the right
+pull the estimate up, bars to the left pull it down.</p>
+<p>Requires ggplot2. If ggrepel is installed, it is used to keep labels from
+overlapping.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

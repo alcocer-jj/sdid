@@ -2,10 +2,9 @@ pandoc: '3.11'
 pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
-  paper-results: paper-results.html
   plotting: plotting.html
   sdid: sdid.html
-last_built: 2026-10-17T21:07Z
+last_built: 2026-10-18T21:48Z
 urls:
   reference: https://alcocer-jj.github.io/sdid/reference
   article: https://alcocer-jj.github.io/sdid/articles

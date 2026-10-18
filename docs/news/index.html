@@ -16,11 +16,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/sdid.html">Get started</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/plotting.html">Plotting results</a></li>
-    <li><a class="dropdown-item" href="../articles/paper-results.html">Prop 99 with three estimators</a></li>
-  </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/plotting.html">Plotting</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">News</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/alcocer-jj/sdid"><span class="fa fa-github fa-lg"></span></a></li>
@@ -38,69 +34,69 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="sdid-010">sdid 0.1.0<a class="anchor" aria-label="anchor" href="#sdid-010"></a></h2>
-<p>First release of <code>sdid</code>, derived from synthdid 0.0.9 by Arkhangelsky, Athey, Hirshberg, Imbens, and Wager, and licensed under the BSD 3-Clause License.</p>
+<p>First release of <code>sdid</code>, which builds on synthdid 0.0.9 by Arkhangelsky, Athey, Hirshberg, Imbens, and Wager. BSD 3-Clause License.</p>
 <div class="section level3">
-<h3 id="function-consolidation-0-1-0">Function consolidation<a class="anchor" aria-label="anchor" href="#function-consolidation-0-1-0"></a></h3>
-<ul><li><p>Three vignettes, rewritten around <code><a href="../reference/sdid.html">sdid()</a></code>, cover getting started, plotting results and Proposition 99 with the three estimators. They are now built with the package, and the website lists them under Get started and Articles.</p></li>
-<li><p><code><a href="../reference/sdid.html">sdid()</a></code> now estimates average treatment effects on the treated (ATT) similar to the Stata command, <code>sdid</code>. It accepts long format panel dataset, it automatically detects whether a staggered treatment approach is needed, and it handles all three approaches (i.e., SDiD, SCM, and DiD) through its <code>method</code> argument.</p></li>
-<li><p>Inference must be chosen with <code>vce</code> parameter (<code>"bootstrap"</code>, <code>"jackknife"</code>, <code>"placebo"</code>, or <code>"noinference"</code>).</p></li>
-<li><p>Like in Stata, <code><a href="../reference/sdid.html">sdid()</a></code> prints a header before estimating, it reports the progress of inference replications, and prints the ATT alongside its z statistic, two-sided normal p-value, and confidence intervals at whatever <code>level</code> you set.</p></li>
-<li><p>The resulting object supports <code>print</code>, <code>summary</code>, <code>coef</code>, <code>vcov</code>, <code>confint</code>, <code>nobs</code>, <code>weights</code>, and <code>plot</code> methods.</p></li>
-<li><p><code>alternative</code> chooses a two-sided test of the effect against zero, the default, or a one-sided test of a positive (<code>"greater"</code>) or negative (<code>"less"</code>) effect. A one-sided test gives one-sided p-values and confidence intervals, in the printed results, <code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint()</a></code> and <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>, and the p-value column is labeled <code>P&gt;z</code> or <code>P&lt;z</code> as in Stata.</p></li>
-<li><p>Each adoption period’s z statistic, p-value and confidence interval are printed with its estimate and stored in <code>cohorts</code>.</p></li>
-<li><p>Every component of the result, and the value of each method and exported function, is documented, in <code><a href="../reference/sdid.html">?sdid</a></code>, the new <code>?sdid-methods</code> and each function’s help page.</p></li>
-<li><p>Results have <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> and <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> methods, registered when the generics package is loaded, so that <code><a href="https://modelsummary.com/man/modelsummary.html" class="external-link">modelsummary()</a></code> and broom work with them. <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> gives the overall effect and, with <code>cohorts = TRUE</code>, each adoption period of a staggered design, and <code>labels</code> names the rows. <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> gives the numbers of observations, units and periods, and the covariates.</p></li>
+<h3 id="interface-0-1-0">Interface<a class="anchor" aria-label="anchor" href="#interface-0-1-0"></a></h3>
+<ul><li>
+<code><a href="../reference/sdid.html">sdid()</a></code> estimates the ATT, following the Stata command <code>sdid</code>. It takes a long format panel, detects staggered adoption, and fits SDiD, SC, or DiD via <code>method</code> (<code>"sdid"</code>, <code>"sc"</code>, <code>"did"</code>).</li>
+<li>Inference must be chosen with <code>vce</code>: <code>"bootstrap"</code>, <code>"jackknife"</code>, <code>"placebo"</code>, or <code>"noinference"</code>. <code>reps</code> defaults to 50. <code>seed</code> makes replications reproducible without changing the session’s RNG state.</li>
+<li>
+<code><a href="../reference/sdid.html">sdid()</a></code> prints a header, replication progress, and the ATT with its z statistic, p-value, and confidence interval at <code>level</code>. <code>graph = FALSE</code> skips the plot; <code>quietly = TRUE</code> prints nothing.</li>
+<li>
+<code>alternative</code> sets a two-sided (default) or one-sided (<code>"greater"</code>, <code>"less"</code>) test. One-sided tests give one-sided p-values and intervals, labeled <code>P&gt;z</code> or <code>P&lt;z</code>.</li>
+<li>Results have <code>print</code>, <code>summary</code>, <code>coef</code>, <code>vcov</code>, <code>confint</code>, <code>nobs</code>, <code>weights</code>, and <code>plot</code> methods, documented in <code><a href="../reference/sdid.html">?sdid</a></code> and <code>?sdid-methods</code>.</li>
+<li>
+<code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> and <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> methods work with modelsummary and broom. <code>tidy(cohorts = TRUE)</code> adds a row per adoption period, and <code>labels</code> names the rows.</li>
+<li>Two vignettes, getting started and plotting, are rewritten around <code><a href="../reference/sdid.html">sdid()</a></code>.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="staggered-adoption-0-1-0">Staggered adoption<a class="anchor" aria-label="anchor" href="#staggered-adoption-0-1-0"></a></h3>
-<ul><li>Designs in which treated units adopt treatment in different periods are estimated cohort by cohort and averaged with weights proportional to each cohort’s number of treated units times its number of post-treatment periods, following Algorithm 1 of Clarke et al. (2024).</li>
-<li>The bootstrap, jackknife, and placebo resample the whole panel jointly, following Algorithms 2 to 4 of Clarke et al. (2024), and report each cohort’s standard error as well as the overall one.</li>
-<li>On the parliamentary gender quota data of Clarke et al. (2024), the package reproduces the paper’s cohort estimates, overall effects, and jackknife standard error to their printed precision.</li>
+<ul><li>Cohort effects are averaged with weights proportional to treated units times post-treatment periods (Clarke et al. 2024, Algorithm 1).</li>
+<li>Bootstrap, jackknife, and placebo resample the whole panel jointly (Algorithms 2–4) and report cohort and overall standard errors.</li>
+<li>Each cohort’s z statistic, p-value, and interval are printed and stored in <code>cohorts</code>.</li>
+<li>Reproduces the cohort estimates, overall effects, and jackknife SE of Clarke et al. (2024) on their gender quota data.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="covariates-0-1-0">Covariates<a class="anchor" aria-label="anchor" href="#covariates-0-1-0"></a></h3>
-<ul><li>The <code>covariates</code> parameter accepts time-varying covariates, and the <code>covariate.method</code> parameter selects how they are adjusted for, either <code>"optimized"</code>, the default, which estimates their coefficients jointly with the weights, or <code>"projected"</code>, which estimates them from a two-way fixed effects regression on observations without treatment, following Kranz (2022) and Clarke et al. (2024).</li>
-<li>The optimized method standardizes covariates by default (<code>standardize = TRUE</code>) and reports coefficients in their own units. It warns when its solver reaches <code>max.iter</code>, with class <code>sdid_max_iter_warning</code>, and stops with an error if its coefficients diverge.</li>
-<li>The result’s <code>beta</code> names the coefficients by covariate. With the optimized method and staggered adoption, it is a matrix of each cohort’s coefficients, with a row per covariate and a column per adoption period.</li>
+<ul><li>
+<code>covariates</code> takes time-varying covariates. <code>covariate.method</code> is <code>"optimized"</code> (default; coefficients estimated jointly with the weights) or <code>"projected"</code> (two-way fixed effects regression on untreated observations; Kranz 2022).</li>
 <li>
-<code>projection.sample</code> chooses the regression sample of the projected method, either the units never treated, the default and the Stata command’s behavior, or every untreated observation.</li>
-<li>Standard errors re-estimate the covariate coefficients in every replication, including each jackknife sample.</li>
+<code>projection.sample</code> sets the projected regression’s sample: never-treated units (default, as in Stata) or all untreated observations.</li>
+<li>The optimized method standardizes covariates by default (<code>standardize = TRUE</code>), warns on reaching <code>max.iter</code> (class <code>sdid_max_iter_warning</code>), and errors if coefficients diverge.</li>
+<li>
+<code>beta</code> is named by covariate. With the optimized method and staggered adoption, it is a covariate × cohort matrix.</li>
+<li>Standard errors re-estimate the coefficients in every replication.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="plots-0-1-0">Plots<a class="anchor" aria-label="anchor" href="#plots-0-1-0"></a></h3>
 <ul><li>
-<code><a href="../reference/sdid_plot.html">sdid_plot()</a></code>, <code><a href="../reference/sdid_units_plot.html">sdid_units_plot()</a></code>, <code><a href="../reference/sdid_placebo.html">sdid_placebo()</a></code>, and <code><a href="../reference/sdid_placebo_plot.html">sdid_placebo_plot()</a></code> replace <code>synthdid_plot()</code>, <code>synthdid_units_plot()</code>, <code>synthdid_placebo()</code>, and <code>synthdid_placebo_plot()</code>, and take the result of <code><a href="../reference/sdid.html">sdid()</a></code>. A staggered design is drawn with one panel per adoption cohort.</li>
+<code><a href="../reference/sdid_plot.html">sdid_plot()</a></code>, <code><a href="../reference/sdid_units_plot.html">sdid_units_plot()</a></code>, <code><a href="../reference/sdid_placebo.html">sdid_placebo()</a></code>, and <code><a href="../reference/sdid_placebo_plot.html">sdid_placebo_plot()</a></code> replace their <code>synthdid_*</code> versions and take <code><a href="../reference/sdid.html">sdid()</a></code> results. Staggered designs get one panel per cohort.</li>
 <li>
-<code><a href="../reference/sdid_plot.html">sdid_plot()</a></code> has two styles. The default, <code>"minimal"</code>, draws the treated trajectory solid and the synthetic control dashed, the time weights as outlined bands with their own axis aligned with the outcome axis at zero, and the last pre-treatment period as a red dashed line. <code>"effects"</code> adds a simplified difference-in-differences diagram.</li>
+<code><a href="../reference/sdid_plot.html">sdid_plot()</a></code> styles: <code>"minimal"</code> (default) and <code>"effects"</code>, which adds a simplified DiD diagram.</li>
+<li>Axes get about five ticks covering the data. Whole-number time axes get whole-number ticks only. <code>x.breaks</code> and <code>y.breaks</code> set ticks manually.</li>
 <li>
-<code><a href="../reference/sdid_plot.html">sdid_plot()</a></code> and <code><a href="../reference/sdid_placebo_plot.html">sdid_placebo_plot()</a></code> label the outcome and time axes with about five nice ticks covering the data, as the Stata command does by default, each axis running between its outermost ticks.</li>
-<li>A time axis whose periods are whole numbers, such as years, gets ticks only at whole numbers, never at half years such as 2002.5.</li>
+<code><a href="../reference/sdid_plot.html">sdid_plot()</a></code> and <code><a href="../reference/sdid_units_plot.html">sdid_units_plot()</a></code> accept a named list of single-cohort results, one panel each. <code>facet</code> and <code>facet.vertical</code> are removed; <code>lambda.comparable</code> defaults to FALSE.</li>
+<li>Stacked panels have open frames, their own time-weight axes, and cohort labels at the adoption period. A red dashed line marks treatment.</li>
 <li>
-<code><a href="../reference/sdid_plot.html">sdid_plot()</a></code> and <code><a href="../reference/sdid_placebo_plot.html">sdid_placebo_plot()</a></code> take <code>x.breaks</code> and <code>y.breaks</code>, ticks chosen by the user, which the axis range, frame, cohort labels and the alignment of the time weights’ band follow.</li>
+<code><a href="../reference/sdid_units_plot.html">sdid_units_plot()</a></code> is redesigned: <code>type = "scatter"</code> (default) plots each control’s weight against its own estimate; <code>type = "bars"</code> shows weighted controls ordered by weight. New arguments: <code>label.units</code>, <code>cohort</code>, <code>weighted.only</code>. Uses ggrepel when installed. <code>negligible.threshold</code>, <code>negligible.alpha</code>, and <code>units</code> are removed.</li>
 <li>
-<code><a href="../reference/sdid_plot.html">sdid_plot()</a></code> and <code><a href="../reference/sdid_units_plot.html">sdid_units_plot()</a></code> take a named list of <code><a href="../reference/sdid.html">sdid()</a></code> results, each with a single adoption period, drawing each in its own panel labeled by its name. Panels are always stacked in a column. <code>facet</code> and <code>facet.vertical</code> are removed, the list’s names labeling the panels, and <code>lambda.comparable</code> defaults to FALSE.</li>
-<li>A cohort’s label under the bottom panel moves, at drawing time, just far enough to clear the time axis’s labels, or to a line below them if there is no room, so that every label is shown.</li>
-<li>Panels stacked in a column, as for a staggered design’s cohorts, each get an open frame and their own time-weight axis, with the time axis only under the bottom panel. A staggered design’s cohorts are labeled at their adoption periods under each panel rather than in grey strips, and other panels have a plain title above them. The treatment line of every plot is drawn midway between the last period before treatment and the first period treated.</li>
-<li>
-<code><a href="../reference/sdid_units_plot.html">sdid_units_plot()</a></code> is redesigned. Its default, <code>type = "scatter"</code>, plots each control’s weight against the estimate it gives alone, whose weighted average is the effect, drawing every control, those without weight as open circles, with the effect as a red line. <code>type = "bars"</code> draws a bar for each weighted control from the effect to its own estimate, ordered by weight, with the weight at its end. <code>label.units</code> names every control, those with weight or the n heaviest, by default all in a single panel and ten in several, and the bars draw only the controls it names. <code>cohort</code> plots one cohort of a staggered design, which otherwise has a panel for each. Labels are placed with ggrepel when it is installed. <code>negligible.threshold</code>, <code>negligible.alpha</code> and <code>units</code> are removed, and <code>weighted.only</code> keeps only weighted controls in the scatter.</li>
-<li>
-<code><a href="../reference/sdid_placebo.html">sdid_placebo()</a></code> and <code><a href="../reference/sdid_placebo_plot.html">sdid_placebo_plot()</a></code> gain <code>placebo.time</code>, to start the in-time placebo treatment in a chosen pre-treatment period. They apply to designs with a single adoption period.</li>
-<li>Plotting functions no longer attach ggplot2 to the search path, and ggplot2 3.4.0 or later is required for plotting.</li>
+<code><a href="../reference/sdid_placebo.html">sdid_placebo()</a></code> and <code><a href="../reference/sdid_placebo_plot.html">sdid_placebo_plot()</a></code> gain <code>placebo.time</code> to choose when the in-time placebo starts. Single-adoption designs only.</li>
+<li>Plotting no longer attaches ggplot2 and requires ggplot2 &gt;= 3.4.0.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="performance-0-1-0">Performance<a class="anchor" aria-label="anchor" href="#performance-0-1-0"></a></h3>
-<ul><li>Weights are estimated in compiled code, and bootstrap, jackknife, and placebo replications run in parallel, with identical results for any number of threads under the same seed. The option <code>sdid.num.threads</code> and the <code>num.threads</code> argument of <code><a href="../reference/sdid.html">sdid()</a></code> set the number of threads.</li>
-<li>Long weight solves switch to a Gram matrix gradient, which is substantially faster on larger panels. The options <code>sdid.solver</code> and <code>sdid.gram.max.mb</code> control this.</li>
-<li>Replications can be interrupted, which stops them and returns every thread.</li>
+<ul><li>Unit and time weights are estimated in C++. Bootstrap, jackknife, and placebo replications run in parallel, with identical results for any thread count under the same seed. Set threads with <code>sdid.num.threads</code> or <code>num.threads</code>.</li>
+<li>Long weight solves switch to a Gram matrix gradient, much faster on large panels. Controlled by <code>sdid.solver</code> and <code>sdid.gram.max.mb</code>.</li>
+<li>Replications can be interrupted with Ctrl-C.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-relative-to-synthdid-0-1-0">Bug fixes relative to synthdid 0.0.9<a class="anchor" aria-label="anchor" href="#bug-fixes-relative-to-synthdid-0-1-0"></a></h3>
-<ul><li><p>Tibbles, such as those <code><a href="https://haven.tidyverse.org/reference/read_dta.html" class="external-link">haven::read_dta()</a></code> and <code>readr</code> return, and data.tables are accepted. They failed with “There is no variation in treatment status”, since selecting one column from them returns a table rather than a vector.</p></li>
-<li><p>A line-search edge case that could produce <code>NaN</code> weights is fixed.</p></li>
-<li><p>The in-time placebo of synthetic control estimates no longer fails with a duplicated <code>omega.intercept</code> argument.</p></li>
-<li><p>Replications now use the fitted estimator’s <code>sparsify</code> settings rather than the defaults.</p></li>
-<li><p>A treatment column stored as doubles no longer produces warnings.</p></li>
-<li><p>The PENN data documentation now gives its correct number of rows.</p></li>
+<ul><li>Tibbles and data.tables are accepted. They previously failed with “There is no variation in treatment status”.</li>
+<li>Fixed a line-search edge case that could produce <code>NaN</code> weights.</li>
+<li>The in-time placebo for SC no longer fails with a duplicated <code>omega.intercept</code> argument.</li>
+<li>Replications use the fitted estimator’s <code>sparsify</code> settings, not the defaults.</li>
+<li>A treatment column stored as doubles no longer warns.</li>
+<li>The PENN documentation gives the correct number of rows.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="removed-0-1-0">Removed<a class="anchor" aria-label="anchor" href="#removed-0-1-0"></a></h3>
@@ -108,9 +104,9 @@
 <code><a href="../reference/synthdid_estimate.html">synthdid_estimate()</a></code>, <code><a href="../reference/sc_estimate.html">sc_estimate()</a></code>, <code><a href="../reference/did_estimate.html">did_estimate()</a></code>, <code><a href="../reference/panel.matrices.html">panel.matrices()</a></code>, <code><a href="../reference/synthdid_se.html">synthdid_se()</a></code>, <code><a href="../reference/synthdid_effect_curve.html">synthdid_effect_curve()</a></code>, and <code><a href="../reference/timesteps.html">timesteps()</a></code> are no longer exported.</li>
 <li>
 <code>synthdid_rmse_plot()</code>, <code>synthdid_controls()</code>, <code>simulate_dgp()</code>, <code>estimate_dgp()</code>, and <code>lindsey_density_estimate()</code> are removed.</li>
-<li>The estimates underlying a result, in its <code>estimates</code> and as returned by <code><a href="../reference/sdid_placebo.html">sdid_placebo()</a></code>, have the class <code>sdid_estimate</code> and print on one line naming their estimator, with the effective numbers of controls and of periods before treatment, without computing a standard error. Their <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> methods are removed, and the package no longer depends on <code>methods</code>.</li>
-<li>The original plot style, standard errors drawn in plots, and plotting several estimates in one shared panel are no longer available.</li>
-<li>The options of synthdid are renamed with the <code>sdid.</code> prefix, and the verbosity option is removed, since <code><a href="../reference/sdid.html">sdid()</a></code> reports progress unless <code>quietly = TRUE</code>.</li>
+<li>Underlying estimates (in <code>estimates</code> and from <code><a href="../reference/sdid_placebo.html">sdid_placebo()</a></code>) have class <code>sdid_estimate</code> and print on one line without computing an SE. Their <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> methods are removed, and the <code>methods</code> dependency is dropped.</li>
+<li>The original plot style, standard errors in plots, and several estimates in one shared panel are removed.</li>
+<li>Options are renamed with the <code>sdid.</code> prefix. The verbosity option is removed; use <code>quietly</code>.</li>
 </ul></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

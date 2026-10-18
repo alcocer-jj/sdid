@@ -30,13 +30,7 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="active nav-item"><a class="nav-link" href="../articles/sdid.html">Get started</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/plotting.html">Plotting results</a></li>
-    <li><a class="dropdown-item" href="../articles/paper-results.html">Prop 99 with three estimators</a></li>
-  </ul>
-</li>
+<li class="nav-item"><a class="nav-link" href="../articles/plotting.html">Plotting</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">News</a></li>
       </ul>
@@ -64,21 +58,22 @@
 
     
     
-<p>sdid estimates the effect of a treatment on the treated units of a
-panel with synthetic difference-in-differences (Arkhangelsky et
-al. 2021), in the manner of the Stata command <code>sdid</code> (Clarke,
-Pailañir, Athey and Imbens 2024). It handles designs in which every
-treated unit is first treated in the same period, and staggered designs
-in which units are first treated in different periods.</p>
+<p><code><a href="../reference/sdid.html">sdid()</a></code> estimates the effect of a treatment on the
+treated units of a panel with synthetic difference-in-differences
+(Arkhangelsky et al. 2021). Following the Stata command
+<code>sdid</code> (Clarke, Pailañir, Athey and Imbens 2024), it handles
+designs in which every treated unit is first treated in the same period,
+and staggered designs in which units are first treated in different
+periods.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/alcocer-jj/sdid" class="external-link">sdid</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="estimating-an-effect">Estimating an effect<a class="anchor" aria-label="anchor" href="#estimating-an-effect"></a>
 </h2>
-<p>The data are a balanced panel in long format, one row per unit and
-period. The treatment column is 1 for a treated unit from its first
-treated period onward, and 0 otherwise. In the Proposition 99 data,
-California is treated from 1989.</p>
+<p>The method requires a balanced panel in long format (i.e., one row
+per unit and period). The treatment column is 1 for a treated unit from
+its first treated period onward, and 0 otherwise. In the Proposition 99
+data, California is treated from 1989.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">california_prop99</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">california_prop99</span><span class="op">)</span></span>
@@ -90,12 +85,11 @@ California is treated from 1989.</p>
 <span><span class="co">#&gt; 5    Delaware 1970          155.0       0</span></span>
 <span><span class="co">#&gt; 6     Georgia 1970          109.9       0</span></span></code></pre></div>
 <p><code><a href="../reference/sdid.html">sdid()</a></code> takes the panel and the names of its columns, and
-the method of inference, which must be given. Like the Stata command, it
-prints a header describing the data before estimating, then the
-results.</p>
+the method of inference. It prints a header describing the data, then
+the results.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">=</span> <span class="fu"><a href="../reference/sdid.html">sdid</a></span><span class="op">(</span><span class="va">california_prop99</span>, outcome <span class="op">=</span> <span class="st">"PacksPerCapita"</span>, unit <span class="op">=</span> <span class="st">"State"</span>,</span>
-<span>           time <span class="op">=</span> <span class="st">"Year"</span>, treatment <span class="op">=</span> <span class="st">"treated"</span>, vce <span class="op">=</span> <span class="st">"placebo"</span>, seed <span class="op">=</span> <span class="fl">1213</span>,</span>
+<span>           time <span class="op">=</span> <span class="st">"Year"</span>, treatment <span class="op">=</span> <span class="st">"treated"</span>, vce <span class="op">=</span> <span class="st">"placebo"</span>, seed <span class="op">=</span> <span class="fl">2112</span>,</span>
 <span>           graph <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Synthetic Difference-in-Differences Estimator</span></span>
@@ -108,25 +102,24 @@ results.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;               ATT Std. Err.     z P&gt;|z| [95% Conf. Interval]</span></span>
-<span><span class="co">#&gt; treated -15.60383  10.93638 -1.43 0.154  -37.03873   5.83108</span></span>
+<span><span class="co">#&gt; treated -15.60383   8.25698 -1.89 0.059  -31.78722   0.57956</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; 95% confidence intervals and p-values use the normal approximation.</span></span></code></pre></div>
 <p><code>graph = TRUE</code>, the default, also draws the trends plot,
-and <code>quietly = TRUE</code> prints nothing, for example within a
-loop.</p>
+and <code>quietly = TRUE</code> prints nothing, which may be helpful if
+looping across DVs.</p>
 </div>
 <div class="section level2">
 <h2 id="reading-the-result">Reading the result<a class="anchor" aria-label="anchor" href="#reading-the-result"></a>
 </h2>
-<p>The result prints as the tables above, and standard methods extract
-its parts.</p>
+<p>Standard methods extract its parts.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   treated </span></span>
 <span><span class="co">#&gt; -15.60383</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">fit</span>, level <span class="op">=</span> <span class="fl">0.9</span><span class="op">)</span></span>
-<span><span class="co">#&gt;               5 %     95 %</span></span>
-<span><span class="co">#&gt; treated -33.59257 2.384911</span></span>
+<span><span class="co">#&gt;               5 %      95 %</span></span>
+<span><span class="co">#&gt; treated -29.18536 -2.022297</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1209</span></span></code></pre></div>
 <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> adds, for each cohort, how many controls and
@@ -150,7 +143,7 @@ frames.</p>
 <span><span class="co">#&gt; 19 1988 0.4270763</span></span></code></pre></div>
 <p>The unit weights pick the states that, together, track California’s
 trend before 1989. The time weights pick the pre-treatment years whose
-average serves as the baseline for the comparison, here 1986 to
+average serves as the baseline for the comparison. Here that is 1986 to
 1988.</p>
 </div>
 <div class="section level2">
@@ -179,11 +172,11 @@ treated unit in every cohort.</li>
 should be chosen before seeing the estimate.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">less</span> <span class="op">=</span> <span class="fu"><a href="../reference/sdid.html">sdid</a></span><span class="op">(</span><span class="va">california_prop99</span>, <span class="st">"PacksPerCapita"</span>, <span class="st">"State"</span>, <span class="st">"Year"</span>, <span class="st">"treated"</span>,</span>
-<span>            vce <span class="op">=</span> <span class="st">"placebo"</span>, seed <span class="op">=</span> <span class="fl">1213</span>, alternative <span class="op">=</span> <span class="st">"less"</span>,</span>
+<span>            vce <span class="op">=</span> <span class="st">"placebo"</span>, seed <span class="op">=</span> <span class="fl">2112</span>, alternative <span class="op">=</span> <span class="st">"less"</span>,</span>
 <span>            graph <span class="op">=</span> <span class="cn">FALSE</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">less</span><span class="op">)</span></span>
-<span><span class="co">#&gt;          0 %     95 %</span></span>
-<span><span class="co">#&gt; treated -Inf 2.384911</span></span></code></pre></div>
+<span><span class="co">#&gt;          0 %      95 %</span></span>
+<span><span class="co">#&gt; treated -Inf -2.022297</span></span></code></pre></div>
 <p>A one-sided interval is open in the direction of its test. Its bound
 at 95% is the bound of the two-sided interval at 90%.</p>
 </div>
@@ -192,8 +185,7 @@ at 95% is the bound of the two-sided interval at 90%.</p>
 </h2>
 <p><code>method</code> estimates synthetic control (<code>"sc"</code>)
 or difference-in-differences (<code>"did"</code>) with the same data and
-inference. The Prop 99 comparison is in
-<code><a href="../articles/paper-results.html">vignette("paper-results", package = "sdid")</a></code>.</p>
+inference.</p>
 </div>
 <div class="section level2">
 <h2 id="covariates">Covariates<a class="anchor" aria-label="anchor" href="#covariates"></a>
@@ -256,21 +248,13 @@ periods 6, 9 and 12.</p>
 <p>The cohorts’ estimates, standard errors and intervals are printed
 under the overall effect and stored in <code>staggered$cohorts</code>.
 The plots draw a panel per cohort.</p>
-<p>The quota data of Bhalotra et al. (2023), the staggered example of
-the Stata command, can be read from the command’s repository.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">quota</span> <span class="op">=</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_dta.html" class="external-link">read_dta</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span></span>
-<span>  <span class="st">"https://github.com/Daniel-Pailanir/sdid/raw/main/"</span>,</span>
-<span>  <span class="st">"simulations/cluster_data/quota_example_cluster.dta"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/sdid.html">sdid</a></span><span class="op">(</span><span class="va">quota</span>, <span class="st">"womparl"</span>, <span class="st">"country"</span>, <span class="st">"year"</span>, <span class="st">"quota"</span>, vce <span class="op">=</span> <span class="st">"bootstrap"</span>,</span>
-<span>     reps <span class="op">=</span> <span class="fl">200</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="tables">Tables<a class="anchor" aria-label="anchor" href="#tables"></a>
 </h2>
 <p>Results work with modelsummary and other packages that read results
 with <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> and <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://modelsummary.com" class="external-link">modelsummary</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://modelsummary.com/man/modelsummary.html" class="external-link">modelsummary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"Prop 99"</span> <span class="op">=</span> <span class="va">fit</span>, <span class="st">"Simulated"</span> <span class="op">=</span> <span class="va">staggered</span><span class="op">)</span>, labels <span class="op">=</span> <span class="st">"ATT"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://modelsummary.com/man/modelsummary.html" class="external-link">modelsummary</a></span><span class="op">(</span><span class="va">staggered</span>, cohorts <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
@@ -281,9 +265,6 @@ with <code><a href="https://generics.r-lib.org/reference/tidy.html" class="exter
 <p>Arkhangelsky, D., Athey, S., Hirshberg, D. A., Imbens, G. W., and
 Wager, S. (2021). Synthetic Difference-in-Differences. <em>American
 Economic Review</em> 111(12), 4088-4118.</p>
-<p>Bhalotra, S., Clarke, D., Gomes, J. F., and Venkataramani, A. (2023).
-Maternal Mortality and Women’s Political Power. <em>Journal of the
-European Economic Association</em> 21(5), 2172-2208.</p>
 <p>Clarke, D., Pailañir, D., Athey, S., and Imbens, G. (2024). On
 Synthetic Difference-in-Differences and Related Estimation Methods in
 Stata. <em>The Stata Journal</em> 24(4), 557-598.</p>

@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Updated Synthetic Difference-in-Differences Estimation and Inference for R • sdid</title>
+<title>Updated Synthetic Difference-in-Differences Estimation and Inference • sdid</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Updated Synthetic Difference-in-Differences Estimation and Inference for R">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Updated Synthetic Difference-in-Differences Estimation and Inference">
 <meta name="description" content="Synthetic difference-in-differences, synthetic control and difference-in-differences estimates of the average treatment effect on the treated in panel data, following Arkhangelsky, Athey, Hirshberg, Imbens and Wager (2021) &lt;doi:10.1257/aer.20190159&gt; and the Stata implementation of Clarke, Pailanir, Athey and Imbens (2024) &lt;doi:10.1177/1536867X241297914&gt;. Supports simultaneous and staggered treatment adoption, bootstrap, jackknife and placebo inference, covariate adjustment, and parallel replications in compiled code. Derived from the synthdid package by the authors of the 2021 paper.">
 <meta property="og:description" content="Synthetic difference-in-differences, synthetic control and difference-in-differences estimates of the average treatment effect on the treated in panel data, following Arkhangelsky, Athey, Hirshberg, Imbens and Wager (2021) &lt;doi:10.1257/aer.20190159&gt; and the Stata implementation of Clarke, Pailanir, Athey and Imbens (2024) &lt;doi:10.1177/1536867X241297914&gt;. Supports simultaneous and staggered treatment adoption, bootstrap, jackknife and placebo inference, covariate adjustment, and parallel replications in compiled code. Derived from the synthdid package by the authors of the 2021 paper.">
 </head>
@@ -32,13 +32,7 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="articles/sdid.html">Get started</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/plotting.html">Plotting results</a></li>
-    <li><a class="dropdown-item" href="articles/paper-results.html">Prop 99 with three estimators</a></li>
-  </ul>
-</li>
+<li class="nav-item"><a class="nav-link" href="articles/plotting.html">Plotting</a></li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">News</a></li>
       </ul>
@@ -55,8 +49,8 @@
 <div class="page-header"><h1 id="sdid-updated-synthetic-difference-in-differences-estimation-and-inference-for-r">sdid: Updated Synthetic Difference-in-Differences Estimation and Inference for R<a class="anchor" aria-label="anchor" href="#sdid-updated-synthetic-difference-in-differences-estimation-and-inference-for-r"></a>
 </h1></div>
 <p><a href="https://alcocer-jj.r-universe.dev/" class="external-link"><img src="https://alcocer-jj.r-universe.dev/badges/:registry" alt="registry status badge"></a> <a href="https://alcocer-jj.r-universe.dev/sdid" class="external-link"><img src="https://img.shields.io/badge/dynamic/json?url=https://alcocer-jj.r-universe.dev/api/packages/sdid&amp;query=$.Version&amp;label=R-universe&amp;color=blue" alt="R-universe"></a> <a href="https://alcocer-jj.r-universe.dev/sdid" class="external-link"><img src="https://img.shields.io/badge/License-BSD_3--Clause-orange" alt="sdid"></a></p>
-<p><code>sdid</code> estimates average effects of a treatment on the treated (ATT) in panel data using synthetic difference-in-differences (SDiD), synthetic control (SC), or difference-in-differences (DiD). It follows the design of the Stata package <a href="https://github.com/Daniel-Pailanir/sdid" class="external-link"><code>sdid</code></a> by Clarke et al. (2024), where the function call accepts a long format panel dataset, automatically detects whether a staggered treatment approach is needed, and estimates the effect with bootstrap, jackknife, or placebo inference.</p>
-<p>The package derives from <a href="https://github.com/synth-inference/synthdid" class="external-link"><code>synthdid</code></a> 0.0.9 by Arkhangelsky et al., (2021). Relative to that package, it adds staggered adoption, optimized and projected methods of covariate adjustment, compiled estimation with parallel replications, and a redesigned interface built around a consolidated function.</p>
+<p>This package is intended to help R users estimate average effects on the treated (ATT) in panel data (under identifying assumptions) using synthetic difference-in-differences (SDiD). We built this package to implement key aspects of the related Stata package <a href="https://github.com/Daniel-Pailanir/sdid" class="external-link"><code>sdid</code></a> by Clarke et al. (2024) in R. As in that package, our implementation accepts a long format panel dataset, detects whether a staggered treatment approach is needed, and estimates the effect with bootstrap, jackknife, or placebo inference.</p>
+<p>We build on a prior R implementation of this method <a href="https://github.com/synth-inference/synthdid" class="external-link"><code>synthdid</code></a> 0.0.9 by Arkhangelsky et al. (2021), adding staggered adoption, optimized and projected methods of covariate adjustment, and a redesigned interface. To substantially reduce computation time, we reimplement the estimation of the unit and time weights in compiled C++ code and parallelize the resampling procedures used for inference.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -71,7 +65,7 @@
 <div class="section level2">
 <h2 id="syntax">Syntax<a class="anchor" aria-label="anchor" href="#syntax"></a>
 </h2>
-<p>The full call is shown below, with each argument’s default. For arguments that take one of several values, the first value listed is the default, except for <code>vce</code>, which has no default and must be given.</p>
+<p>A full call of the main function is shown below. For arguments that take one of several values, the first value listed is the default, except for <code>vce</code>, which has no default and must be given.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/sdid.html">sdid</a></span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
@@ -104,7 +98,7 @@
 <li>
 <code>time</code>: name of the time period variable.</li>
 <li>
-<code>treatment</code>: name of the binary treatment variable, where 1 denotes the first post-treatment period.</li>
+<code>treatment</code>: name of the binary treatment variable, equal to 1 for a treated unit in every period from its first treated period onward, and 0 otherwise.</li>
 <li>
 <code>vce</code>: inference method (required).</li>
 <li>
@@ -167,7 +161,7 @@
 <div class="section level2">
 <h2 id="staggered-adoption">Staggered adoption<a class="anchor" aria-label="anchor" href="#staggered-adoption"></a>
 </h2>
-<p>When treated units adopt treatment in different periods, <code><a href="reference/sdid.html">sdid()</a></code> estimates each adoption cohort, meaning the units first treated in that period together with the units never treated, as its own design. The overall effect averages the cohort effects with weights proportional to each cohort’s number of treated units times its number of post-treatment periods, following Algorithm 1 of Clarke et al. (2024). Bootstrap, jackknife, and placebo inference then resamples the whole panel jointly, as in Algorithms 2 to 4 of Clarke et al. (2024).</p>
+<p>When treated units adopt treatment in different periods, <code><a href="reference/sdid.html">sdid()</a></code> estimates adoption-period effects. The overall effect is a weighted average of these effects with weights proportional to each cohort’s number of treated units times its number of post-treatment periods, following Algorithm 1 of Clarke et al. (2024). Bootstrap, jackknife, and placebo inference then resample the whole panel jointly, as in Algorithms 2 to 4 of Clarke et al. (2024).</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://haven.tidyverse.org" class="external-link">haven</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/alcocer-jj/sdid" class="external-link">sdid</a></span><span class="op">)</span></span>
@@ -208,7 +202,7 @@
 <div class="section level2">
 <h2 id="covariates">Covariates<a class="anchor" aria-label="anchor" href="#covariates"></a>
 </h2>
-<p>Time-varying covariates are named with <code>covariates</code>, while <code>covariate.method</code> selects one of the two adjustments the package offers. The default, <code>"optimized"</code>, estimates their coefficients jointly with the weights, following Arkhangelsky et al. (2021), after standardizing each covariate. The alternative, <code>"projected"</code>, estimates them from a two-way fixed effects regression on observations without treatment, following Kranz (2022) and Clarke et al. (2024).</p>
+<p>Time-varying covariates can be supplied with <code>covariates</code>, while <code>covariate.method</code> selects one of the two adjustments. The default, <code>"optimized"</code>, estimates their coefficients jointly with the weights, following Arkhangelsky et al. (2021), after standardizing each covariate. The alternative, <code>"projected"</code>, estimates them from a two-way fixed effects regression on the never-treated units, following Kranz (2022) and Clarke et al. (2024).</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/alcocer-jj/sdid" class="external-link">sdid</a></span><span class="op">)</span></span>
 <span></span>
@@ -241,7 +235,7 @@
 <div class="section level2">
 <h2 id="tables">Tables<a class="anchor" aria-label="anchor" href="#tables"></a>
 </h2>
-<p>Results work with <a href="https://modelsummary.com" class="external-link">modelsummary</a> and other packages that read results through <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> and <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>, with no further setup. Each model’s effect is named by its treatment column by default, so <code>labels = "ATT"</code> puts the effects of models with different treatment columns on one row. For a staggered design, <code>cohorts = TRUE</code> adds a row for each adoption period, and <code>labels</code> can then name every row, the overall effect first.</p>
+<p>Results work with <a href="https://modelsummary.com" class="external-link">modelsummary</a> and other packages that read results through <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> and <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>. Each model’s effect is named by its treatment column by default, so <code>labels = "ATT"</code> puts the effects of models with different treatment columns on one row. For a staggered design, <code>cohorts = TRUE</code> adds a row for each adoption period, and <code>labels</code> can then name every row.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://modelsummary.com" class="external-link">modelsummary</a></span><span class="op">)</span></span>
 <span></span>
@@ -332,7 +326,7 @@
 <div class="section level2">
 <h2 id="plots">Plots<a class="anchor" aria-label="anchor" href="#plots"></a>
 </h2>
-<p>The plotting functions take the result of <code><a href="reference/sdid.html">sdid()</a></code>, drawing one panel per adoption cohort for a staggered design, each labeled at its adoption period and with its own time-weight axis. By default, as in Stata, each numeric axis has about five nice ticks covering the data and runs between its outermost ticks. To choose the ticks yourself, give them as <code>x.breaks</code> and <code>y.breaks</code>, which the frame and labels follow, rather than adding a scale to the plot.</p>
+<p>The plotting functions take the result of <code><a href="reference/sdid.html">sdid()</a></code> and draw one panel per adoption cohort for a staggered design.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/sdid_plot.html">sdid_plot</a></span><span class="op">(</span><span class="va">fit1</span><span class="op">)</span> <span class="co"># trajectories and time weights</span></span>
 <span></span>
@@ -350,13 +344,13 @@
 <div class="section level2">
 <h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
 </h2>
-<p>Weights are estimated in compiled code, and bootstrap, jackknife, and placebo replications run in parallel across all available threads, with identical results for any number of threads under the same seed. The option <code>sdid.num.threads</code>, or the <code>num.threads</code> argument of <code><a href="reference/sdid.html">sdid()</a></code>, limits the number of threads. Interrupting a run with Ctrl-C stops the replications and returns every thread.</p>
+<p>Unit and time weights are estimated in C++, and bootstrap, jackknife, and placebo replications run in parallel across all available threads. The option <code>sdid.num.threads</code>, or the <code>num.threads</code> argument of <code><a href="reference/sdid.html">sdid()</a></code>, limits the number of threads.</p>
 </div>
 <div class="section level2">
 <h2 id="acknowledgments">Acknowledgments<a class="anchor" aria-label="anchor" href="#acknowledgments"></a>
 </h2>
-<p>We are grateful to Dmitry Arkhangelsky, Susan Athey, David A. Hirshberg, Guido W. Imbens and Stefan Wager, the authors of the <a href="https://github.com/synth-inference/synthdid" class="external-link"><code>synthdid</code></a> package for R, and to Damian Clarke, Daniel Pailañir, Susan Athey, Guido Imbens, Diego Ciccia, and Tommy Morgan, the authors and contributors of the <a href="https://github.com/Daniel-Pailanir/sdid" class="external-link"><code>sdid</code></a> package for Stata. Their work established the methods and software this package builds on, and by sharing their code openly on GitHub, they made it possible for others to extend and adapt it.</p>
-<p>Additionally, development of this package was assisted by <a href="https://claude.com/product/claude-code" class="external-link">Claude Code</a>, an AI coding assistant by Anthropic, for code refactoring, documentation updates, and package restructuring.</p>
+<p>This package builds heavily on the work of Dmitry Arkhangelsky, Susan Athey, David A. Hirshberg, Guido W. Imbens and Stefan Wager, the authors of the <a href="https://github.com/synth-inference/synthdid" class="external-link"><code>synthdid</code></a> package for R, and Damian Clarke, Daniel Pailañir, Susan Athey, Guido Imbens, Diego Ciccia, and Tommy Morgan, the authors and contributors of the <a href="https://github.com/Daniel-Pailanir/sdid" class="external-link"><code>sdid</code></a> package for Stata. We build on their methods and the code they made openly available.</p>
+<p>Development of this package was assisted by <a href="https://claude.com/product/claude-code" class="external-link">Claude Code</a>, an AI coding assistant by Anthropic, for code refactoring, documentation updates, and package restructuring.</p>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>

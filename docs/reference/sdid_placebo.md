@@ -33,14 +33,6 @@ sdid_placebo(estimate, treated.fraction = NULL, placebo.time = "auto")
 
 ## Value
 
-The placebo estimate, an object of the internal class `sdid_estimate`.
-It is a 1 by 1 matrix holding the estimated placebo effect, which
-[`c()`](https://rdrr.io/r/base/c.html) turns into a number, with the
-attributes `weights`, holding the unit weights `omega` and time weights
-`lambda`, `setup`, the panel restricted to the periods before treatment,
-with the placebo starting at `placebo.time`, and `opts`, the settings of
-the fit. Printing it shows, on one line, the estimator, the estimate,
-the effective numbers of controls and of periods before the placebo, and
-the numbers of treated units and of periods after it.
-[`sdid_placebo_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo_plot.md)
-draws it with the original estimate.
+The placebo estimate. Use [`c()`](https://rdrr.io/r/base/c.html) to get
+it as a number, print it for a one-line summary, or plot it with
+[`sdid_placebo_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo_plot.md).

@@ -1,27 +1,19 @@
-# sdid: Updated Synthetic Difference-in-Differences Estimation and Inference for R
+# sdid: Updated Synthetic Difference-in-Differences Estimation and Inference
 
-Synthetic difference-in-differences (Arkhangelsky et al. 2021) for the
-average effect of a treatment on the treated in panel data, with
-synthetic control and difference-in-differences in the same framework,
-in the manner of the Stata command sdid of Clarke, Pailañir, Athey and
-Imbens (2024). Designs where treated units adopt treatment in the same
-period or in different periods are both supported, with bootstrap,
-jackknife and placebo inference, covariate adjustment by either of the
-Stata command's two methods, and estimation in compiled code with
-parallel replications.
-
-Estimation goes through
-[`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md), which
-takes a panel in long format and returns a result with a Stata-style
-table. The result can be passed to
+Synthetic difference-in-differences (Arkhangelsky et al. 2021) in R,
+following the Stata package sdid of Clarke, Pailañir, Athey and Imbens
+(2024). Start with
+[`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md), then
+plot results with
 [`sdid_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_plot.md),
-[`sdid_units_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_units_plot.md),
-[`sdid_placebo()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo.md)
+[`sdid_units_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_units_plot.md)
 and
 [`sdid_placebo_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo_plot.md).
+See the README and the "Getting started" vignette for examples.
 
-The package derives from synthdid 0.0.9 by Dmitry Arkhangelsky, Susan
-Athey, David A. Hirshberg, Guido W. Imbens and Stefan Wager.
+The package builds on synthdid 0.0.9, a prior R implementation of the
+method by Dmitry Arkhangelsky, Susan Athey, David A. Hirshberg, Guido W.
+Imbens and Stefan Wager.
 
 ## Details
 

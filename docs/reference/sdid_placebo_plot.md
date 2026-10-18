@@ -1,8 +1,8 @@
-# Takes an `sdid()` object and plots the treated and synthetic control trajectories along with a placebo plot stacked in a column. Requires ggplot2.
+# Plot an estimate with its in-time placebo
 
-Takes an [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md)
-object and plots the treated and synthetic control trajectories along
-with a placebo plot stacked in a column. Requires ggplot2.
+Plots the treated and synthetic control trajectories of an
+[`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md) result,
+with an in-time placebo stacked below. Requires ggplot2.
 
 ## Usage
 
@@ -51,8 +51,4 @@ sdid_placebo_plot(
 
 ## Value
 
-A ggplot object, which draws the plot when printed and can be extended
-with `+`, for example with labels, themes or further layers. Scales,
-facets and coordinate systems added this way replace those the plot
-sets, as for
-[`sdid_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_plot.md).
+A ggplot object, which can be extended with `+`.

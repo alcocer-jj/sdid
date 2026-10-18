@@ -67,17 +67,13 @@ glance(x, ...)
 ## Value
 
 [`tidy()`](https://generics.r-lib.org/reference/tidy.html) returns a
-data frame with a row per estimate and the columns `term`, the row's
-name, `estimate`, `std.error`, `statistic`, the z statistic, `p.value`,
-its p-value under the standard normal distribution against the fit's
-`alternative`, and, with `conf.int = TRUE`, `conf.low` and `conf.high`,
-one of which is infinite for a one-sided alternative. Without inference
-the standard errors and everything computed from them are `NA`.
-[`glance()`](https://generics.r-lib.org/reference/glance.html) returns a
-data frame with one row and the columns `nobs`, the number of
-observations, `n.units`, the number of units, `n.periods`, the number of
-periods, and `covariates`, the names of the covariates separated by
-commas, or `NA` without covariates.
+data frame with one row per estimate and columns `term`, `estimate`,
+`std.error`, `statistic` (z), `p.value`, and, if `conf.int = TRUE`,
+`conf.low` and `conf.high`. These are `NA` without inference.
+
+[`glance()`](https://generics.r-lib.org/reference/glance.html) returns
+one row with `nobs`, `n.units`, `n.periods` and `covariates`
+(comma-separated names, or `NA`).
 
 ## Examples
 

@@ -28,7 +28,7 @@ A data frame with 1209 rows and 4 variables:
 
 - treated:
 
-  the treatmed indicator 0: control, 1: treated, numeric
+  the treatment indicator 0: control, 1: treated, numeric
 
 ## Source
 

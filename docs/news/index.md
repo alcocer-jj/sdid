@@ -2,100 +2,62 @@
 
 ## sdid 0.1.0
 
-First release of `sdid`, derived from synthdid 0.0.9 by Arkhangelsky,
-Athey, Hirshberg, Imbens, and Wager, and licensed under the BSD 3-Clause
-License.
+First release of `sdid`, which builds on synthdid 0.0.9 by Arkhangelsky,
+Athey, Hirshberg, Imbens, and Wager. BSD 3-Clause License.
 
-### Function consolidation
+### Interface
 
-- Three vignettes, rewritten around
-  [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md), cover
-  getting started, plotting results and Proposition 99 with the three
-  estimators. They are now built with the package, and the website lists
-  them under Get started and Articles.
-
-- [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md) now
-  estimates average treatment effects on the treated (ATT) similar to
-  the Stata command, `sdid`. It accepts long format panel dataset, it
-  automatically detects whether a staggered treatment approach is
-  needed, and it handles all three approaches (i.e., SDiD, SCM, and DiD)
-  through its `method` argument.
-
-- Inference must be chosen with `vce` parameter (`"bootstrap"`,
-  `"jackknife"`, `"placebo"`, or `"noinference"`).
-
-- Like in Stata,
-  [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md) prints
-  a header before estimating, it reports the progress of inference
-  replications, and prints the ATT alongside its z statistic, two-sided
-  normal p-value, and confidence intervals at whatever `level` you set.
-
-- The resulting object supports `print`, `summary`, `coef`, `vcov`,
-  `confint`, `nobs`, `weights`, and `plot` methods.
-
-- `alternative` chooses a two-sided test of the effect against zero, the
-  default, or a one-sided test of a positive (`"greater"`) or negative
-  (`"less"`) effect. A one-sided test gives one-sided p-values and
-  confidence intervals, in the printed results,
-  [`confint()`](https://rdrr.io/r/stats/confint.html) and
-  [`tidy()`](https://generics.r-lib.org/reference/tidy.html), and the
-  p-value column is labeled `P>z` or `P<z` as in Stata.
-
-- Each adoption period’s z statistic, p-value and confidence interval
-  are printed with its estimate and stored in `cohorts`.
-
-- Every component of the result, and the value of each method and
-  exported function, is documented, in
-  [`?sdid`](https://alcocer-jj.github.io/sdid/reference/sdid.md), the
-  new `?sdid-methods` and each function’s help page.
-
-- Results have
-  [`tidy()`](https://generics.r-lib.org/reference/tidy.html) and
-  [`glance()`](https://generics.r-lib.org/reference/glance.html)
-  methods, registered when the generics package is loaded, so that
-  [`modelsummary()`](https://modelsummary.com/man/modelsummary.html) and
-  broom work with them.
-  [`tidy()`](https://generics.r-lib.org/reference/tidy.html) gives the
-  overall effect and, with `cohorts = TRUE`, each adoption period of a
-  staggered design, and `labels` names the rows.
-  [`glance()`](https://generics.r-lib.org/reference/glance.html) gives
-  the numbers of observations, units and periods, and the covariates.
+- [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md)
+  estimates the ATT, following the Stata command `sdid`. It takes a long
+  format panel, detects staggered adoption, and fits SDiD, SC, or DiD
+  via `method` (`"sdid"`, `"sc"`, `"did"`).
+- Inference must be chosen with `vce`: `"bootstrap"`, `"jackknife"`,
+  `"placebo"`, or `"noinference"`. `reps` defaults to 50. `seed` makes
+  replications reproducible without changing the session’s RNG state.
+- [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md) prints
+  a header, replication progress, and the ATT with its z statistic,
+  p-value, and confidence interval at `level`. `graph = FALSE` skips the
+  plot; `quietly = TRUE` prints nothing.
+- `alternative` sets a two-sided (default) or one-sided (`"greater"`,
+  `"less"`) test. One-sided tests give one-sided p-values and intervals,
+  labeled `P>z` or `P<z`.
+- Results have `print`, `summary`, `coef`, `vcov`, `confint`, `nobs`,
+  `weights`, and `plot` methods, documented in
+  [`?sdid`](https://alcocer-jj.github.io/sdid/reference/sdid.md) and
+  `?sdid-methods`.
+- [`tidy()`](https://generics.r-lib.org/reference/tidy.html) and
+  [`glance()`](https://generics.r-lib.org/reference/glance.html) methods
+  work with modelsummary and broom. `tidy(cohorts = TRUE)` adds a row
+  per adoption period, and `labels` names the rows.
+- Two vignettes, getting started and plotting, are rewritten around
+  [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md).
 
 ### Staggered adoption
 
-- Designs in which treated units adopt treatment in different periods
-  are estimated cohort by cohort and averaged with weights proportional
-  to each cohort’s number of treated units times its number of
-  post-treatment periods, following Algorithm 1 of Clarke et al. (2024).
-- The bootstrap, jackknife, and placebo resample the whole panel
-  jointly, following Algorithms 2 to 4 of Clarke et al. (2024), and
-  report each cohort’s standard error as well as the overall one.
-- On the parliamentary gender quota data of Clarke et al. (2024), the
-  package reproduces the paper’s cohort estimates, overall effects, and
-  jackknife standard error to their printed precision.
+- Cohort effects are averaged with weights proportional to treated units
+  times post-treatment periods (Clarke et al. 2024, Algorithm 1).
+- Bootstrap, jackknife, and placebo resample the whole panel jointly
+  (Algorithms 2–4) and report cohort and overall standard errors.
+- Each cohort’s z statistic, p-value, and interval are printed and
+  stored in `cohorts`.
+- Reproduces the cohort estimates, overall effects, and jackknife SE of
+  Clarke et al. (2024) on their gender quota data.
 
 ### Covariates
 
-- The `covariates` parameter accepts time-varying covariates, and the
-  `covariate.method` parameter selects how they are adjusted for, either
-  `"optimized"`, the default, which estimates their coefficients jointly
-  with the weights, or `"projected"`, which estimates them from a
-  two-way fixed effects regression on observations without treatment,
-  following Kranz (2022) and Clarke et al. (2024).
+- `covariates` takes time-varying covariates. `covariate.method` is
+  `"optimized"` (default; coefficients estimated jointly with the
+  weights) or `"projected"` (two-way fixed effects regression on
+  untreated observations; Kranz 2022).
+- `projection.sample` sets the projected regression’s sample:
+  never-treated units (default, as in Stata) or all untreated
+  observations.
 - The optimized method standardizes covariates by default
-  (`standardize = TRUE`) and reports coefficients in their own units. It
-  warns when its solver reaches `max.iter`, with class
-  `sdid_max_iter_warning`, and stops with an error if its coefficients
-  diverge.
-- The result’s `beta` names the coefficients by covariate. With the
-  optimized method and staggered adoption, it is a matrix of each
-  cohort’s coefficients, with a row per covariate and a column per
-  adoption period.
-- `projection.sample` chooses the regression sample of the projected
-  method, either the units never treated, the default and the Stata
-  command’s behavior, or every untreated observation.
-- Standard errors re-estimate the covariate coefficients in every
-  replication, including each jackknife sample.
+  (`standardize = TRUE`), warns on reaching `max.iter` (class
+  `sdid_max_iter_warning`), and errors if coefficients diverge.
+- `beta` is named by covariate. With the optimized method and staggered
+  adoption, it is a covariate × cohort matrix.
+- Standard errors re-estimate the coefficients in every replication.
 
 ### Plots
 
@@ -104,106 +66,58 @@ License.
   [`sdid_placebo()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo.md),
   and
   [`sdid_placebo_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo_plot.md)
-  replace `synthdid_plot()`, `synthdid_units_plot()`,
-  `synthdid_placebo()`, and `synthdid_placebo_plot()`, and take the
-  result of
-  [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md). A
-  staggered design is drawn with one panel per adoption cohort.
+  replace their `synthdid_*` versions and take
+  [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md)
+  results. Staggered designs get one panel per cohort.
 - [`sdid_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_plot.md)
-  has two styles. The default, `"minimal"`, draws the treated trajectory
-  solid and the synthetic control dashed, the time weights as outlined
-  bands with their own axis aligned with the outcome axis at zero, and
-  the last pre-treatment period as a red dashed line. `"effects"` adds a
-  simplified difference-in-differences diagram.
-- [`sdid_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_plot.md)
-  and
-  [`sdid_placebo_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo_plot.md)
-  label the outcome and time axes with about five nice ticks covering
-  the data, as the Stata command does by default, each axis running
-  between its outermost ticks.
-- A time axis whose periods are whole numbers, such as years, gets ticks
-  only at whole numbers, never at half years such as 2002.5.
-- [`sdid_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_plot.md)
-  and
-  [`sdid_placebo_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo_plot.md)
-  take `x.breaks` and `y.breaks`, ticks chosen by the user, which the
-  axis range, frame, cohort labels and the alignment of the time
-  weights’ band follow.
+  styles: `"minimal"` (default) and `"effects"`, which adds a simplified
+  DiD diagram.
+- Axes get about five ticks covering the data. Whole-number time axes
+  get whole-number ticks only. `x.breaks` and `y.breaks` set ticks
+  manually.
 - [`sdid_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_plot.md)
   and
   [`sdid_units_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_units_plot.md)
-  take a named list of
-  [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md)
-  results, each with a single adoption period, drawing each in its own
-  panel labeled by its name. Panels are always stacked in a column.
-  `facet` and `facet.vertical` are removed, the list’s names labeling
-  the panels, and `lambda.comparable` defaults to FALSE.
-- A cohort’s label under the bottom panel moves, at drawing time, just
-  far enough to clear the time axis’s labels, or to a line below them if
-  there is no room, so that every label is shown.
-- Panels stacked in a column, as for a staggered design’s cohorts, each
-  get an open frame and their own time-weight axis, with the time axis
-  only under the bottom panel. A staggered design’s cohorts are labeled
-  at their adoption periods under each panel rather than in grey strips,
-  and other panels have a plain title above them. The treatment line of
-  every plot is drawn midway between the last period before treatment
-  and the first period treated.
+  accept a named list of single-cohort results, one panel each. `facet`
+  and `facet.vertical` are removed; `lambda.comparable` defaults to
+  FALSE.
+- Stacked panels have open frames, their own time-weight axes, and
+  cohort labels at the adoption period. A red dashed line marks
+  treatment.
 - [`sdid_units_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_units_plot.md)
-  is redesigned. Its default, `type = "scatter"`, plots each control’s
-  weight against the estimate it gives alone, whose weighted average is
-  the effect, drawing every control, those without weight as open
-  circles, with the effect as a red line. `type = "bars"` draws a bar
-  for each weighted control from the effect to its own estimate, ordered
-  by weight, with the weight at its end. `label.units` names every
-  control, those with weight or the n heaviest, by default all in a
-  single panel and ten in several, and the bars draw only the controls
-  it names. `cohort` plots one cohort of a staggered design, which
-  otherwise has a panel for each. Labels are placed with ggrepel when it
-  is installed. `negligible.threshold`, `negligible.alpha` and `units`
-  are removed, and `weighted.only` keeps only weighted controls in the
-  scatter.
+  is redesigned: `type = "scatter"` (default) plots each control’s
+  weight against its own estimate; `type = "bars"` shows weighted
+  controls ordered by weight. New arguments: `label.units`, `cohort`,
+  `weighted.only`. Uses ggrepel when installed. `negligible.threshold`,
+  `negligible.alpha`, and `units` are removed.
 - [`sdid_placebo()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo.md)
   and
   [`sdid_placebo_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo_plot.md)
-  gain `placebo.time`, to start the in-time placebo treatment in a
-  chosen pre-treatment period. They apply to designs with a single
-  adoption period.
-- Plotting functions no longer attach ggplot2 to the search path, and
-  ggplot2 3.4.0 or later is required for plotting.
+  gain `placebo.time` to choose when the in-time placebo starts.
+  Single-adoption designs only.
+- Plotting no longer attaches ggplot2 and requires ggplot2 \>= 3.4.0.
 
 ### Performance
 
-- Weights are estimated in compiled code, and bootstrap, jackknife, and
+- Unit and time weights are estimated in C++. Bootstrap, jackknife, and
   placebo replications run in parallel, with identical results for any
-  number of threads under the same seed. The option `sdid.num.threads`
-  and the `num.threads` argument of
-  [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md) set
-  the number of threads.
-- Long weight solves switch to a Gram matrix gradient, which is
-  substantially faster on larger panels. The options `sdid.solver` and
-  `sdid.gram.max.mb` control this.
-- Replications can be interrupted, which stops them and returns every
-  thread.
+  thread count under the same seed. Set threads with `sdid.num.threads`
+  or `num.threads`.
+- Long weight solves switch to a Gram matrix gradient, much faster on
+  large panels. Controlled by `sdid.solver` and `sdid.gram.max.mb`.
+- Replications can be interrupted with Ctrl-C.
 
 ### Bug fixes relative to synthdid 0.0.9
 
-- Tibbles, such as those
-  [`haven::read_dta()`](https://haven.tidyverse.org/reference/read_dta.html)
-  and `readr` return, and data.tables are accepted. They failed with
-  “There is no variation in treatment status”, since selecting one
-  column from them returns a table rather than a vector.
-
-- A line-search edge case that could produce `NaN` weights is fixed.
-
-- The in-time placebo of synthetic control estimates no longer fails
-  with a duplicated `omega.intercept` argument.
-
-- Replications now use the fitted estimator’s `sparsify` settings rather
-  than the defaults.
-
-- A treatment column stored as doubles no longer produces warnings.
-
-- The PENN data documentation now gives its correct number of rows.
+- Tibbles and data.tables are accepted. They previously failed with
+  “There is no variation in treatment status”.
+- Fixed a line-search edge case that could produce `NaN` weights.
+- The in-time placebo for SC no longer fails with a duplicated
+  `omega.intercept` argument.
+- Replications use the fitted estimator’s `sparsify` settings, not the
+  defaults.
+- A treatment column stored as doubles no longer warns.
+- The PENN documentation gives the correct number of rows.
 
 ### Removed
 
@@ -218,18 +132,13 @@ License.
   are no longer exported.
 - `synthdid_rmse_plot()`, `synthdid_controls()`, `simulate_dgp()`,
   `estimate_dgp()`, and `lindsey_density_estimate()` are removed.
-- The estimates underlying a result, in its `estimates` and as returned
-  by
-  [`sdid_placebo()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo.md),
-  have the class `sdid_estimate` and print on one line naming their
-  estimator, with the effective numbers of controls and of periods
-  before treatment, without computing a standard error. Their
-  [`summary()`](https://rdrr.io/r/base/summary.html) and
+- Underlying estimates (in `estimates` and from
+  [`sdid_placebo()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo.md))
+  have class `sdid_estimate` and print on one line without computing an
+  SE. Their [`summary()`](https://rdrr.io/r/base/summary.html) and
   [`format()`](https://rdrr.io/r/base/format.html) methods are removed,
-  and the package no longer depends on `methods`.
-- The original plot style, standard errors drawn in plots, and plotting
-  several estimates in one shared panel are no longer available.
-- The options of synthdid are renamed with the `sdid.` prefix, and the
-  verbosity option is removed, since
-  [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md)
-  reports progress unless `quietly = TRUE`.
+  and the `methods` dependency is dropped.
+- The original plot style, standard errors in plots, and several
+  estimates in one shared panel are removed.
+- Options are renamed with the `sdid.` prefix. The verbosity option is
+  removed; use `quietly`.

@@ -42,11 +42,9 @@ sdid_units_plot(
 
 - label.units:
 
-  Which controls to name. "all" names every control, "weighted" those
-  with positive weight, and a whole number n the n with the largest
-  weights, with any tied at the cutoff included. Defaults to "all" for a
-  single panel and 10 for several. The scatter still draws the controls
-  it leaves unnamed, while the bars draw only the controls they name.
+  Which controls to label: "all", "weighted" (positive weight only), or
+  a number n for the n largest weights. Defaults to "all" for one panel
+  and 10 for several. The bars only show labeled controls.
 
 - weighted.only:
 
@@ -55,25 +53,15 @@ sdid_units_plot(
 
 ## Value
 
-A ggplot object, which draws the plot when printed and can be extended
-with `+`, for example with labels, themes or further layers. Scales,
-facets and coordinate systems added this way replace those the plot
-sets.
+A ggplot object, which can be extended with `+`.
 
 ## Details
 
 `type = "scatter"` (the default) plots each control's weight against its
-own estimate, with the effect as a red line, so that the controls that
-make up the synthetic control are at the right and whether they agree
-with each other is seen in their spread about the line. Every control is
-drawn, those with no weight as open circles, so that the plot also shows
-whether the weighting changed the answer, and `label.units` chooses
-which are named. `type = "bars"` draws a bar for each control with
-weight chosen by `label.units`, ordered from the largest weight down,
-running from the effect to the control's own estimate, with its weight
-at the end. A control pulls the estimate up if its bar runs right of the
-line and down if left, by its weight times the bar's length.
+own estimate, with the overall effect as a red line. Controls with zero
+weight are drawn as open circles. `type = "bars"` draws a bar from the
+effect to each weighted control's estimate, largest weight first; bars
+to the right pull the estimate up, bars to the left pull it down.
 
-Requires ggplot2, and the ggrepel package to place the scatter's labels
-without overlap. Without ggrepel, labels that would overlap are left
-out.
+Requires ggplot2. If ggrepel is installed, it is used to keep labels
+from overlapping.

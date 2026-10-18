@@ -15,22 +15,15 @@ uses ggrepel, when it is installed, to keep its labels apart.
 
 ## Trends
 
-[`sdid_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_plot.md),
-which [`plot()`](https://rdrr.io/r/graphics/plot.default.html) calls,
+[`sdid_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_plot.md)
 draws the treated units’ average and the synthetic control. The red
-dashed line marks the start of treatment, midway between the last period
-before it and the first treated period. The gray band at the bottom
-shows the time weights, with their scale on the right-hand axis.
+dashed line marks treatment. The gray band at the bottom shows the time
+weights with their scale on the right-hand axis.
 
 \
 [`sdid_plot`](https://alcocer-jj.github.io/sdid/reference/sdid_plot.md)`(``fit``)`
 
 ![](plotting_files/figure-html/unnamed-chunk-3-1.png)
-
-The two lines may sit apart before treatment. Synthetic
-difference-in-differences asks the synthetic control to move in parallel
-with the treated units over the weighted pre-treatment periods, not to
-match their level.
 
 `style = "effects"` adds a diagram of the comparison behind the
 estimate, with an arrow marking the effect.
@@ -52,10 +45,11 @@ controls with the largest weights.
 
 ![](plotting_files/figure-html/unnamed-chunk-5-1.png)
 
-`spaghetti.matrices` adds any other trajectories, given as a list with
-one matrix per estimate, each row a trajectory with a column per period
-and a row name that labels it. Here, the unweighted average of all
-controls, the comparison plain difference-in-differences makes.
+`spaghetti.matrices` adds any other trajectories you want, as a list
+with one matrix per estimate. Each row is a trajectory with one column
+per period, and its row name becomes the label. Here we add the plain
+average of all controls, which is what difference-in-differences
+compares against.
 
 \
 `Y`` ``=`` ``fit``$``setup``$``Y`\
@@ -86,11 +80,10 @@ that their heights can be compared across panels.
 
 ## Ticks
 
-Each axis has about five nice ticks covering the data, as the Stata
-command chooses them, and a time axis of years gets ticks only at whole
-years. `x.breaks` and `y.breaks` set the ticks, which the axis range,
-frame and band follow. Adding a scale to the returned plot instead
-replaces the one it sets.
+By default each axis gets about five ticks, and a year axis only gets
+whole years. To choose the ticks yourself, use `x.breaks` and
+`y.breaks`. Adding a ggplot scale to the plot instead would replace the
+package’s own.
 
 \
 [`sdid_plot`](https://alcocer-jj.github.io/sdid/reference/sdid_plot.md)`(``fit``, x.breaks ``=`` `[`seq`](https://rdrr.io/r/base/seq.html)`(``1970``, ``2000``, by ``=`` ``5``)``)`
@@ -100,39 +93,40 @@ replaces the one it sets.
 ## Unit weights
 
 [`sdid_units_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_units_plot.md)
-shows each control’s own estimate, the difference-in-differences of the
-treated units with that control alone, whose average with the unit
-weights is the estimate. The default scatter plots each control’s weight
-against its own estimate, with controls given no weight drawn as open
-circles.
+shows what each control contributes. For every control, it computes the
+difference-in-differences estimate using that control alone; the overall
+estimate is the weighted average of these. The default scatter plots
+each control’s weight against its own estimate, and controls with no
+weight are drawn as open circles.
 
 \
 [`sdid_units_plot`](https://alcocer-jj.github.io/sdid/reference/sdid_units_plot.md)`(``fit``)`
 
 ![](plotting_files/figure-html/unnamed-chunk-9-1.png)
 
-The heavily weighted controls are at the right. Their spread about the
-red line shows whether they agree, and the open circles show whether the
-weighting changed the answer. `type = "bars"` draws the weighted
-controls from the largest weight down, each bar running from the
-estimate to the control’s own estimate, with its weight at the end.
+Heavily weighted controls sit on the right. If they cluster around the
+red line, they agree with each other. `type = "bars"` shows only the
+weighted controls, largest weight first, with each bar running from the
+overall estimate to that control’s own estimate.
 
 \
 [`sdid_units_plot`](https://alcocer-jj.github.io/sdid/reference/sdid_units_plot.md)`(``fit``, type ``=`` ``"bars"``)`
 
 ![](plotting_files/figure-html/unnamed-chunk-10-1.png)
 
-`label.units` names every control, those with weight, or the `n` with
-the largest weights. For a staggered result, each cohort gets a panel,
-with ten names each, unless `cohort` chooses one.
+`label.units` sets which controls get labels: all of them, only the
+weighted ones, or the `n` with the largest weights. A staggered result
+gets one panel per cohort, with ten labels each, unless `cohort` picks a
+single cohort.
 
 ## Placebo tests
 
 [`sdid_placebo_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo_plot.md)
 draws the estimate above an in-time placebo, which pretends treatment
 began earlier, at `placebo.time`, using only the periods before the real
-treatment. Where nothing happened, the placebo’s lines should keep
-tracking each other after its red line.
+treatment. If there was no effect before the real treatment, the
+placebo’s two lines should keep tracking each other after the red line
+that marks the placebo treatment.
 
 \
 [`sdid_placebo_plot`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo_plot.md)`(``fit``, placebo.time ``=`` ``1981``)`

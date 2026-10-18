@@ -21,25 +21,11 @@
 ## Plots and placebo tests (require ggplot2)
 
 - [`sdid_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_plot.md)
-  :
-
-  Takes an
-  [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md) object
-  and plots the treated and synthetic control trajectories along with
-  the lambda weights conveying which pre-treatment periods were most
-  informative for predicting post-treatment outcomes among the controls.
-
+  : Plot treated and synthetic control trajectories
 - [`sdid_units_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_units_plot.md)
   : Plots each control unit's weight and its own estimate
-
 - [`sdid_placebo_plot()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo_plot.md)
-  :
-
-  Takes an
-  [`sdid()`](https://alcocer-jj.github.io/sdid/reference/sdid.md) object
-  and plots the treated and synthetic control trajectories along with a
-  placebo plot stacked in a column. Requires ggplot2.
-
+  : Plot an estimate with its in-time placebo
 - [`sdid_placebo()`](https://alcocer-jj.github.io/sdid/reference/sdid_placebo.md)
   : Computes a placebo variant of our estimator using pre-treatment data
   only
@@ -55,4 +41,4 @@
 
 - [`sdid-package`](https://alcocer-jj.github.io/sdid/reference/sdid-package.md)
   : sdid: Updated Synthetic Difference-in-Differences Estimation and
-  Inference for R
+  Inference
