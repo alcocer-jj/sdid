@@ -64,9 +64,9 @@ Standard methods extract its parts.
 [`coef`](https://rdrr.io/r/stats/coef.html)`(``fit``)`\
 `#>   treated `\
 `#> -15.60383`\
-[`confint`](https://rdrr.io/r/stats/confint.html)`(``fit``, level ``=`` ``0.9``)`\
-`#>               5 %      95 %`\
-`#> treated -29.18536 -2.022297`\
+[`confint`](https://rdrr.io/r/stats/confint.html)`(``fit``, level ``=`` ``0.95``)`\
+`#>             2.5 %    97.5 %`\
+`#> treated -31.78722 0.5795642`\
 [`nobs`](https://rdrr.io/r/stats/nobs.html)`(``fit``)`\
 `#> [1] 1209`
 
