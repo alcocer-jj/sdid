@@ -43,7 +43,7 @@ Standard methods extract its parts.
 
 ```{r}
 coef(fit)
-confint(fit, level = 0.9)
+confint(fit, level = 0.95)
 nobs(fit)
 ```
 
