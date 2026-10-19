@@ -54,19 +54,20 @@
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>The development version can be installed from GitHub or R-Universe.</p>
+<p>The development version can be installed from R-Universe.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"alcocer-jj/sdid"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"sdid"</span>, repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://alcocer-jj.r-universe.dev"</span>,</span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"sdid"</span>, repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://alcocer-jj.r-universe.dev"</span>,</span>
 <span>                                   <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>Users who already have a C++ toolchain can also install <code>sdid</code> directly from GitHub, which compiles the package from source.<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;This route requires Rtools on Windows, or the Xcode Command Line Tools and GNU Fortran on macOS.&lt;/p&gt;"><sup>1</sup></a></p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"alcocer-jj/sdid"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="syntax">Syntax<a class="anchor" aria-label="anchor" href="#syntax"></a>
 </h2>
 <p>A full call of the main function is shown below. For arguments that take one of several values, the first value listed is the default, except for <code>vce</code>, which has no default and must be given.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/sdid.html">sdid</a></span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
 <span>  <span class="va">outcome</span>,</span>
@@ -131,7 +132,7 @@
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
 <p>The example below estimates the effect of California’s Proposition 99 on cigarette consumption, using placebo inference because California is the only treated state. An <code><a href="reference/sdid.html">sdid()</a></code> call describes the data and parameters in the console, shows the inference progress, and prints the results.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/alcocer-jj/sdid" class="external-link">sdid</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">california_prop99</span><span class="op">)</span></span>
@@ -162,7 +163,7 @@
 <h2 id="staggered-adoption">Staggered adoption<a class="anchor" aria-label="anchor" href="#staggered-adoption"></a>
 </h2>
 <p>When treated units adopt treatment in different periods, <code><a href="reference/sdid.html">sdid()</a></code> estimates adoption-period effects. The overall effect is a weighted average of these effects with weights proportional to each cohort’s number of treated units times its number of post-treatment periods, following Algorithm 1 of Clarke et al. (2024). Bootstrap, jackknife, and placebo inference then resample the whole panel jointly, as in Algorithms 2 to 4 of Clarke et al. (2024).</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://haven.tidyverse.org" class="external-link">haven</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/alcocer-jj/sdid" class="external-link">sdid</a></span><span class="op">)</span></span>
 <span></span>
@@ -203,7 +204,7 @@
 <h2 id="covariates">Covariates<a class="anchor" aria-label="anchor" href="#covariates"></a>
 </h2>
 <p>Time-varying covariates can be supplied with <code>covariates</code>, while <code>covariate.method</code> selects one of the two adjustments. The default, <code>"optimized"</code>, estimates their coefficients jointly with the weights, following Arkhangelsky et al. (2021), after standardizing each covariate. The alternative, <code>"projected"</code>, estimates them from a two-way fixed effects regression on the never-treated units, following Kranz (2022) and Clarke et al. (2024).</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/alcocer-jj/sdid" class="external-link">sdid</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">CPS</span><span class="op">)</span></span>
@@ -236,7 +237,7 @@
 <h2 id="tables">Tables<a class="anchor" aria-label="anchor" href="#tables"></a>
 </h2>
 <p>Results work with <a href="https://modelsummary.com" class="external-link">modelsummary</a> and other packages that read results through <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> and <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code>. Each model’s effect is named by its treatment column by default, so <code>labels = "ATT"</code> puts the effects of models with different treatment columns on one row. For a staggered design, <code>cohorts = TRUE</code> adds a row for each adoption period, and <code>labels</code> can then name every row.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://modelsummary.com" class="external-link">modelsummary</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">gm</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
@@ -327,7 +328,7 @@
 <h2 id="plots">Plots<a class="anchor" aria-label="anchor" href="#plots"></a>
 </h2>
 <p>The plotting functions take the result of <code><a href="reference/sdid.html">sdid()</a></code> and draw one panel per adoption cohort for a staggered design.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/sdid_plot.html">sdid_plot</a></span><span class="op">(</span><span class="va">fit1</span><span class="op">)</span> <span class="co"># trajectories and time weights</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/sdid_plot.html">sdid_plot</a></span><span class="op">(</span><span class="va">fit1</span>, style <span class="op">=</span> <span class="st">"effects"</span><span class="op">)</span> <span class="co"># with a DiD effects diagram</span></span>
@@ -365,6 +366,8 @@
 <p>BSD 3-Clause. See <a href="LICENSE.html">LICENSE.md</a>. The package derives from synthdid 0.0.9, Copyright 2019 Stanford University, used under its BSD 3-Clause option.</p>
 </div>
 </div>
+
+
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">

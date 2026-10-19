@@ -10,15 +10,22 @@ We build on a prior R implementation of this method [`synthdid`](https://github.
 
 ## Installation
 
-The development version can be installed from GitHub or R-Universe.
+The development version can be installed from R-Universe.
+
+```r
+install.packages("sdid", repos = c("https://alcocer-jj.r-universe.dev",
+                                   "https://cloud.r-project.org"))
+```
+
+Users who already have a C++ toolchain can also install `sdid` directly from GitHub, which compiles the package from source.[^1]
+
+[^1]: This route requires Rtools on Windows, or the Xcode Command Line Tools and GNU Fortran on macOS.
 
 ```r
 # install.packages("remotes")
 remotes::install_github("alcocer-jj/sdid")
-
-install.packages("sdid", repos = c("https://alcocer-jj.r-universe.dev",
-                                   "https://cloud.r-project.org"))
 ```
+  
 
 ## Syntax
 
@@ -311,4 +318,3 @@ Kranz, Sebastian. (2022). "Synthetic Difference-in-Differences with Time-Varying
 ## License
 
 BSD 3-Clause. See [LICENSE.md](LICENSE.md). The package derives from synthdid 0.0.9, Copyright 2019 Stanford University, used under its BSD 3-Clause option.
-
