@@ -27,12 +27,12 @@ Source:
 
 Alcocer J, Muttram H (2026). *sdid: Updated Synthetic
 Difference-in-Differences Estimation and Inference*. R package version
-0.1.0, <https://github.com/alcocer-jj/sdid>.
+0.1.1, <https://github.com/alcocer-jj/sdid>.
 
 @Manual{,\
   title = {sdid: Updated Synthetic Difference-in-Differences Estimation and Inference},\
   author = {Jose J. Alcocer and Harry G. Muttram},\
   year = {2026},\
-  note = {R package version 0.1.0},\
+  note = {R package version 0.1.1},\
   url = {https://github.com/alcocer-jj/sdid},\
 }

@@ -1,8 +1,11 @@
 # sdid: Updated Synthetic Difference-in-Differences Estimation and Inference for R
 
+<!-- badges: start -->
 [![registry status badge](https://alcocer-jj.r-universe.dev/badges/:registry)](https://alcocer-jj.r-universe.dev/)
 [![R-universe](https://img.shields.io/badge/dynamic/json?url=https://alcocer-jj.r-universe.dev/api/packages/sdid&query=$.Version&label=R-universe&color=blue)](https://alcocer-jj.r-universe.dev/sdid)
-[![sdid](https://img.shields.io/badge/License-BSD_3--Clause-orange)](https://alcocer-jj.r-universe.dev/sdid)
+[![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-orange)](https://alcocer-jj.r-universe.dev/sdid)
+<!-- badges: end -->
+
 
 This package is intended to help R users estimate average effects on the treated (ATT) in panel data (under identifying assumptions) using synthetic difference-in-differences (SDiD). We built this package to implement key aspects of the related Stata package [`sdid`](https://github.com/Daniel-Pailanir/sdid) by Clarke et al. (2024) in R. As in that package, our implementation accepts a long format panel dataset, detects whether a staggered treatment approach is needed, and estimates the effect with bootstrap, jackknife, or placebo inference.
 

@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">sdid</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,7 +48,8 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="sdid-updated-synthetic-difference-in-differences-estimation-and-inference-for-r">sdid: Updated Synthetic Difference-in-Differences Estimation and Inference for R<a class="anchor" aria-label="anchor" href="#sdid-updated-synthetic-difference-in-differences-estimation-and-inference-for-r"></a>
 </h1></div>
-<p><a href="https://alcocer-jj.r-universe.dev/" class="external-link"><img src="https://alcocer-jj.r-universe.dev/badges/:registry" alt="registry status badge"></a> <a href="https://alcocer-jj.r-universe.dev/sdid" class="external-link"><img src="https://img.shields.io/badge/dynamic/json?url=https://alcocer-jj.r-universe.dev/api/packages/sdid&amp;query=$.Version&amp;label=R-universe&amp;color=blue" alt="R-universe"></a> <a href="https://alcocer-jj.r-universe.dev/sdid" class="external-link"><img src="https://img.shields.io/badge/License-BSD_3--Clause-orange" alt="sdid"></a></p>
+<!-- badges: start -->
+
 <p>This package is intended to help R users estimate average effects on the treated (ATT) in panel data (under identifying assumptions) using synthetic difference-in-differences (SDiD). We built this package to implement key aspects of the related Stata package <a href="https://github.com/Daniel-Pailanir/sdid" class="external-link"><code>sdid</code></a> by Clarke et al. (2024) in R. As in that package, our implementation accepts a long format panel dataset, detects whether a staggered treatment approach is needed, and estimates the effect with bootstrap, jackknife, or placebo inference.</p>
 <p>We build on a prior R implementation of this method <a href="https://github.com/synth-inference/synthdid" class="external-link"><code>synthdid</code></a> 0.0.9 by Arkhangelsky et al. (2021), adding staggered adoption, optimized and projected methods of covariate adjustment, and a redesigned interface. To substantially reduce computation time, we reimplement the estimation of the unit and time weights in compiled C++ code and parallelize the resampling procedures used for inference.</p>
 <div class="section level2">
@@ -401,7 +402,14 @@
 </ul>
 </div>
 
-
+<div class="dev-status">
+<h2 data-toc-skip>Dev status</h2>
+<ul class="list-unstyled">
+<li><a href="https://alcocer-jj.r-universe.dev/" class="external-link"><img src="https://alcocer-jj.r-universe.dev/badges/:registry" alt="registry status badge"></a></li>
+<li><a href="https://alcocer-jj.r-universe.dev/sdid" class="external-link"><img src="https://img.shields.io/badge/dynamic/json?url=https://alcocer-jj.r-universe.dev/api/packages/sdid&amp;query=$.Version&amp;label=R-universe&amp;color=blue" alt="R-universe"></a></li>
+<li><a href="https://alcocer-jj.r-universe.dev/sdid" class="external-link"><img src="https://img.shields.io/badge/License-BSD_3--Clause-orange" alt="License: BSD 3-Clause"></a></li>
+</ul>
+</div>
 
   </aside>
 </div>
